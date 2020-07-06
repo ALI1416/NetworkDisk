@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ck.dao.TipOffDao">
+
+	<sql id="col">id,userid,fileid,text,time,ip,status
+	</sql>
+
+	<!-- 插入 -->
+	<insert id="insert" parameterType="TipOffVo" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT tip_off (
+		userid,fileid,text,time,ip
+		)VALUES(#{userid},#{fileid},#{text},#{time},#{ip})
+	</insert>
+
+	<!-- 查询通过id -->
+	<select id="findById" parameterType="Integer"
+		resultType="TipOff">
+		SELECT
+		<include refid="col" />
+		FROM
+		tip_off
+		WHERE
+		id=#{id}
+	</select>
+
+	<!-- 更新 -->
+	<update id="update" parameterType="TipOffVo">
+		UPDATE tip_off
+		<set>
+			<if test="userid != null">
+				userid=#{userid},
+			</if>
+			<if test="fileid != null">
+				fileid=#{fileid},
+			</if>
+			<if test="text != null and text != ''">
+				text=#{text},
+			</if>
+			<if test="time != null">
+				time=#{time},
+			</if>
+			<if test="ip != null">
+				ip=#{ip},
+			</if>
+			<if test="status != null">
+				status=#{status},
+			</if>
+		</set>
+		WHERE
+		id=#{id}
+	</update>
+
+	<!-- 查询 -->
+	<!-- IP地址、时间范围查询，其他精确查询 -->
+	<select id="find" parameterType="TipOffVo" resultType="TipOff">
+		SELECT
+		<include refid="col" />
+		FROM
+		tip_off
+		<where>
+			<if test="userid != null">
+				and userid=#{userid}
+			</if>
+			<if test="fileid != null">
+				and fileid=#{fileid}
+			</if>
+			<if test="status != null">
+				and status=#{status}
+			</if>
+			<choose>
+				<when test="ip == null and ipEnd == null"></when>
+				<when test="ip == ipEnd and ipNot == null">
+					and ip = #{ip}
+				</when>
+				<when test="ip == ipEnd and ipNot != null">
+					and ip != #{ip}
+				</when>
+				<when test="ip == null">
+					and ip &lt;= #{ipEnd}
+				</when>
+				<when test="ipEnd == null">
+					and ip &gt;= #{ip}
+				</when>
+				<when test="ipNot == null">
+					and ip between #{ip} and #{ipEnd}
+				</when>
+				<when test="ipNot != null">
+					and ip not between #{ip} and #{ipEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="time == null and timeEnd == null"></when>
+				<when test="time == timeEnd and timeNot == null">
+					and time = #{time}
+				</when>
+				<when test="time == timeEnd and timeNot != null">
+					and time != #{time}
+				</when>
+				<when test="time == null">
+					and time &lt;= #{timeEnd}
+				</when>
+				<when test="timeEnd == null">
+					and time &gt;= #{time}
+				</when>
+				<when test="timeNot == null">
+					and time between #{time} and #{timeEnd}
+				</when>
+				<when test="timeNot != null">
+					and time not between #{time} and #{timeEnd}
+				</when>
+			</choose>
+		</where>
+	</select>
+</mapper>
