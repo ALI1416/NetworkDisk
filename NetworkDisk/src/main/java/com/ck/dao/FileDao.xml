@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ck.dao.FileDao">
+
+	<sql id="col">id,userid,name,nameindex,description,pwd,length,timestamp,path,md5,browsing,download,uuid,isdelete,isshare,issearch,islimit,isfolder,issubfile,time
+	</sql>
+
+	<!-- 插入 -->
+	<insert id="insert" parameterType="FileVo" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT file (
+		userid,name,nameindex,length,timestamp,path,md5,uuid,isfolder,issubfile,time
+		)VALUES(#{userid},#{name},#{nameindex},#{length},#{timestamp},#{path},#{md5},#{uuid},#{isfolder},#{issubfile},#{time})
+	</insert>
+
+	<!-- 查询通过id -->
+	<select id="findById" parameterType="Integer" resultType="File">
+		SELECT
+		<include refid="col" />
+		FROM
+		file
+		WHERE
+		id=#{id}
+	</select>
+
+	<!-- 更新 -->
+	<update id="update" parameterType="FileVo">
+		UPDATE file
+		<set>
+			<if test="userid != null">
+				userid=#{userid},
+			</if>
+			<if test="name != null and name != ''">
+				name=#{name},
+			</if>
+			<if test="nameindex != null and nameindex != ''">
+				nameindex=#{nameindex},
+			</if>
+			<if test="description != null">
+				description=#{description},
+			</if>
+			<if test="pwd != null">
+				pwd=#{pwd},
+			</if>
+			<if test="length != null">
+				length=#{length},
+			</if>
+			<if test="timestamp != null and timestamp != ''">
+				timestamp=#{timestamp},
+			</if>
+			<if test="path != null and path != ''">
+				path=#{path},
+			</if>
+			<if test="md5 != null and md5 != ''">
+				md5=#{md5},
+			</if>
+			<if test="browsing != null">
+				browsing=#{browsing},
+			</if>
+			<if test="download != null">
+				download=#{download},
+			</if>
+			<if test="uuid != null and uuid != ''">
+				uuid=#{uuid},
+			</if>
+			<if test="isdelete != null">
+				isdelete=#{isdelete},
+			</if>
+			<if test="isshare != null">
+				isshare=#{isshare},
+			</if>
+			<if test="issearch != null">
+				issearch=#{issearch},
+			</if>
+			<if test="islimit != null">
+				islimit=#{islimit},
+			</if>
+			<if test="issubfile != null">
+				issubfile=#{issubfile},
+			</if>
+			<if test="time != null">
+				time=#{time},
+			</if>
+		</set>
+		WHERE
+		id=#{id}
+	</update>
+
+	<!-- 增加浏览次数1次 -->
+	<update id="addBrowsing" parameterType="Integer">
+		UPDATE file SET
+		browsing=browsing+1 WHERE id=#{id}
+	</update>
+
+	<!-- 增加下载次数1次 -->
+	<update id="addDownload" parameterType="Integer">
+		UPDATE file SET
+		download=download+1 WHERE id=#{id}
+	</update>
+
+	<!-- 查询 -->
+	<!-- 文件名全文索引查询，描述模糊查询，长度、浏览次数、下载次数、时间范围查询，其他精确查询 -->
+	<select id="find" parameterType="FileVo" resultType="File">
+		SELECT
+		<include refid="col" />
+		FROM
+		file
+		<where>
+			<if test="nameindex != null">
+				and MATCH (nameindex) AGAINST (#{nameindex} IN BOOLEAN
+				MODE)
+			</if>
+			<if test="description != null">
+				<bind name="description1" value="'%'+ description +'%'" />
+				and description like #{description1}
+			</if>
+			<if test="userid != null">
+				and userid=#{userid}
+			</if>
+			<if test="timestamp != null and timestamp != ''">
+				and timestamp=#{timestamp}
+			</if>
+			<if test="path != null and path != ''">
+				and path=#{path}
+			</if>
+			<if test="md5 != null and md5 != ''">
+				and md5=#{md5}
+			</if>
+			<if test="uuid != null and uuid != ''">
+				and uuid=#{uuid}
+			</if>
+			<if test="isdelete != null">
+				and isdelete=#{isdelete}
+			</if>
+			<if test="isshare != null">
+				and isshare=#{isshare}
+			</if>
+			<if test="issearch != null">
+				and issearch=#{issearch}
+			</if>
+			<if test="islimit != null">
+				and islimit=#{islimit}
+			</if>
+			<if test="isfolder != null">
+				and isfolder=#{isfolder}
+			</if>
+			<if test="issubfile != null">
+				and issubfile=#{issubfile}
+			</if>
+			<choose>
+				<!-- 忽略 -->
+				<when test="pwd == null and pwdNot == null"></when>
+				<!-- 存在密码 -->
+				<when test="pwd != null and pwdNot != null">
+					and pwd != ""
+				</when>
+				<!-- 不存在密码 -->
+				<when test="pwd == null and pwdNot != null">
+					and pwd = ""
+				</when>
+				<!-- 自定义密码 -->
+				<when test="pwd != null and pwdNot == null">
+					and pwd = #{pwd}
+				</when>
+			</choose>
+			<choose>
+				<when test="length == null and lengthEnd == null"></when>
+				<when test="length == lengthEnd and lengthNot == null">
+					and length = #{length}
+				</when>
+				<when test="length == lengthEnd and lengthNot != null">
+					and length != #{length}
+				</when>
+				<when test="length == null">
+					and length &lt;= #{lengthEnd}
+				</when>
+				<when test="lengthEnd == null">
+					and length &gt;= #{length}
+				</when>
+				<when test="lengthNot == null">
+					and length between #{length} and #{lengthEnd}
+				</when>
+				<when test="lengthNot != null">
+					and length not between #{length} and #{lengthEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="browsing == null and browsingEnd == null"></when>
+				<when test="browsing == browsingEnd and browsingNot == null">
+					and browsing = #{browsing}
+				</when>
+				<when test="browsing == browsingEnd and browsingNot != null">
+					and browsing != #{browsing}
+				</when>
+				<when test="browsing == null">
+					and browsing &lt;= #{browsingEnd}
+				</when>
+				<when test="browsingEnd == null">
+					and browsing &gt;= #{browsing}
+				</when>
+				<when test="browsingNot == null">
+					and browsing between #{browsing} and #{browsingEnd}
+				</when>
+				<when test="browsingNot != null">
+					and browsing not between #{browsing} and
+					#{browsingEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="download == null and downloadEnd == null"></when>
+				<when test="download == downloadEnd and downloadNot == null">
+					and download = #{download}
+				</when>
+				<when test="download == downloadEnd and downloadNot != null">
+					and download != #{download}
+				</when>
+				<when test="download == null">
+					and download &lt;= #{downloadEnd}
+				</when>
+				<when test="downloadEnd == null">
+					and download &gt;= #{download}
+				</when>
+				<when test="downloadNot == null">
+					and download between #{download} and #{downloadEnd}
+				</when>
+				<when test="downloadNot != null">
+					and download not between #{download} and
+					#{downloadEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="time == null and timeEnd == null"></when>
+				<when test="time == timeEnd and timeNot == null">
+					and time = #{time}
+				</when>
+				<when test="time == timeEnd and timeNot != null">
+					and time != #{time}
+				</when>
+				<when test="time == null">
+					and time &lt;= #{timeEnd}
+				</when>
+				<when test="timeEnd == null">
+					and time &gt;= #{time}
+				</when>
+				<when test="timeNot == null">
+					and time between #{time} and #{timeEnd}
+				</when>
+				<when test="timeNot != null">
+					and time not between #{time} and #{timeEnd}
+				</when>
+			</choose>
+		</where>
+	</select>
+
+	<!-- 精确查询 -->
+	<select id="findExact" parameterType="FileVo" resultType="File">
+		SELECT
+		<include refid="col" />
+		FROM
+		file
+		<where>
+			<if test="name != null and name != ''">
+				and name=#{name}
+			</if>
+			<if test="description != null and description != ''">
+				and description=#{description}
+			</if>
+			<if test="timestamp != null and timestamp != ''">
+				and timestamp=#{timestamp}
+			</if>
+			<if test="path != null and path != ''">
+				and path=#{path}
+			</if>
+			<if test="md5 != null and md5 != ''">
+				and md5=#{md5}
+			</if>
+			<if test="uuid != null and uuid != ''">
+				and uuid=#{uuid}
+			</if>
+			<if test="pwd != null">
+				and pwd=#{pwd}
+			</if>
+			<if test="userid != null">
+				and userid=#{userid}
+			</if>
+			<if test="isdelete != null">
+				and isdelete=#{isdelete}
+			</if>
+			<if test="isshare != null">
+				and isshare=#{isshare}
+			</if>
+			<if test="issearch != null">
+				and issearch=#{issearch}
+			</if>
+			<if test="islimit != null">
+				and islimit=#{islimit}
+			</if>
+			<if test="isfolder != null">
+				and isfolder=#{isfolder}
+			</if>
+			<if test="issubfile != null">
+				and issubfile=#{issubfile}
+			</if>
+			<if test="length != null">
+				and length=#{length}
+			</if>
+			<if test="browsing != null">
+				and browsing=#{browsing}
+			</if>
+			<if test="time != null">
+				and time=#{time}
+			</if>
+		</where>
+	</select>
+</mapper>

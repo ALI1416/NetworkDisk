@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ck.dao.UserDao">
+
+	<sql id="col">id,userinfoid,account,pwd,name,gender,year,description,type,sizeone,sizeall,sizecurrent,time
+	</sql>
+
+	<!-- 插入 -->
+	<insert id="insert" parameterType="UserVo" keyProperty="id"
+		useGeneratedKeys="true">
+		INSERT user (
+		userinfoid,account,pwd,gender,year,type,sizeone,sizeall,time
+		)VALUES(#{userinfoid},#{account},#{pwd},#{gender},#{year},#{type},#{sizeone},#{sizeall},#{time})
+	</insert>
+
+	<!-- 查询通过id -->
+	<select id="findById" parameterType="Integer" resultType="User">
+		SELECT
+		<include refid="col" />
+		FROM
+		user
+		WHERE
+		id=#{id}
+	</select>
+
+	<!-- 更新 -->
+	<update id="update" parameterType="UserVo">
+		UPDATE user
+		<set>
+			<if test="userinfoid != null">
+				userinfoid=#{userinfoid},
+			</if>
+			<if test="account != null and account != ''">
+				account=#{account},
+			</if>
+			<if test="pwd != null and pwd != ''">
+				pwd=#{pwd},
+			</if>
+			<if test="name != null and name != ''">
+				name=#{name},
+			</if>
+			<if test="gender != null">
+				gender=#{gender},
+			</if>
+			<if test="year != null">
+				year=#{year},
+			</if>
+			<if test="description != null">
+				description=#{description},
+			</if>
+			<if test="type != null">
+				type=#{type},
+			</if>
+			<if test="sizeone != null">
+				sizeone=#{sizeone},
+			</if>
+			<if test="sizeall != null">
+				sizeall=#{sizeall},
+			</if>
+			<if test="sizecurrent != null">
+				sizecurrent=#{sizecurrent},
+			</if>
+			<if test="time != null">
+				time=#{time},
+			</if>
+		</set>
+		WHERE
+		id=#{id}
+	</update>
+
+	<!-- 查询 -->
+	<!-- 用户名、昵称模糊查询，出生年、3种容量、时间范围查询，密码不能查询，其他精确查询 -->
+	<select id="find" parameterType="UserVo" resultType="User">
+		SELECT
+		<include refid="col" />
+		FROM
+		user
+		<where>
+			<if test="userinfoid != null">
+				and userinfoid=#{userinfoid}
+			</if>
+			<if test="account != null and account != ''">
+				<bind name="account1" value="'%'+ account +'%'" />
+				and account like #{account1}
+			</if>
+			<if test="name != null and name != ''">
+				<bind name="name1" value="'%'+ name +'%'" />
+				and name like #{name1}
+			</if>
+			<if test="description != null and description != ''">
+				<bind name="description1" value="'%'+ description +'%'" />
+				and description like #{description1}
+			</if>
+			<if test="gender != null">
+				and gender=#{gender}
+			</if>
+			<if test="type != null">
+				and type=#{type}
+			</if>
+			<choose>
+				<when test="year == null and yearEnd == null"></when>
+				<when test="year == yearEnd and yearNot == null">
+					and year = #{year}
+				</when>
+				<when test="year == yearEnd and yearNot != null">
+					and year != #{year}
+				</when>
+				<when test="year == null">
+					and year &lt;= #{yearEnd}
+				</when>
+				<when test="yearEnd == null">
+					and year &gt;= #{year}
+				</when>
+				<when test="yearNot == null">
+					and year between #{year} and #{yearEnd}
+				</when>
+				<when test="yearNot != null">
+					and year not between #{year} and #{yearEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="sizeone == null and sizeoneEnd == null"></when>
+				<when test="sizeone == sizeoneEnd and sizeoneNot == null">
+					and sizeone = #{sizeone}
+				</when>
+				<when test="sizeone == sizeoneEnd and sizeoneNot != null">
+					and sizeone != #{sizeone}
+				</when>
+				<when test="sizeone == null">
+					and sizeone &lt;= #{sizeoneEnd}
+				</when>
+				<when test="sizeoneEnd == null">
+					and sizeone &gt;= #{sizeone}
+				</when>
+				<when test="sizeoneNot == null">
+					and sizeone between #{sizeone} and #{sizeoneEnd}
+				</when>
+				<when test="sizeoneNot != null">
+					and sizeone not between #{sizeone} and #{sizeoneEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="sizeall == null and sizeallEnd == null"></when>
+				<when test="sizeall == sizeallEnd and sizeallNot == null">
+					and sizeall = #{sizeall}
+				</when>
+				<when test="sizeall == sizeallEnd and sizeallNot != null">
+					and sizeall != #{sizeall}
+				</when>
+				<when test="sizeall == null">
+					and sizeall &lt;= #{sizeallEnd}
+				</when>
+				<when test="sizeallEnd == null">
+					and sizeall &gt;= #{sizeall}
+				</when>
+				<when test="sizeallNot == null">
+					and sizeall between #{sizeall} and #{sizeallEnd}
+				</when>
+				<when test="sizeallNot != null">
+					and sizeall not between #{sizeall} and #{sizeallEnd}
+				</when>
+			</choose>
+			<choose>
+				<when test="sizecurrent == null and sizecurrentEnd == null"></when>
+				<when
+					test="sizecurrent == sizecurrentEnd and sizecurrentNot == null">
+					and sizecurrent = #{sizecurrent}
+				</when>
+				<when
+					test="sizecurrent == sizecurrentEnd and sizecurrentNot != null">
+					and sizecurrent != #{sizecurrent}
+				</when>
+				<when test="sizecurrent == null">
+					and sizecurrent &lt;= #{sizecurrentEnd}
+				</when>
+				<when test="sizecurrentEnd == null">
+					and sizecurrent &gt;= #{sizecurrent}
+				</when>
+				<when test="sizecurrentNot == null">
+					and sizecurrent between #{sizecurrent} and
+					#{sizecurrentEnd}
+				</when>
+				<when test="sizecurrentNot != null">
+					and sizecurrent not between #{sizecurrent} and
+					#{sizecurrentEnd}
+				</when>
+			</choose>
+			<choose>
+				<!-- 忽略 -->
+				<when test="time == null and timeEnd == null"></when>
+				<!-- 首尾不会同时为null。首尾相等时，根据Not是否为null决定==和!=。 -->
+				<!-- 等于 -->
+				<when test="time == timeEnd and timeNot == null">
+					and time = #{time}
+				</when>
+				<!-- 不等 -->
+				<when test="time == timeEnd and timeNot != null">
+					and time != #{time}
+				</when>
+				<!-- 首尾不会同时为null，也不会同时相等。根据首尾为null的情况决定<和>。 -->
+				<!-- 小于 -->
+				<when test="time == null">
+					and time &lt;= #{timeEnd}
+				</when>
+				<!-- 大于 -->
+				<when test="timeEnd == null">
+					and time &gt;= #{time}
+				</when>
+				<!-- 首尾都不会为null，也不会相等。根据Not是否为null决定between和not between。 -->
+				<!-- 在...与...之间 -->
+				<when test="timeNot == null">
+					and time between #{time} and #{timeEnd}
+				</when>
+				<!-- 不在...与...之间 -->
+				<when test="timeNot != null">
+					and time not between #{time} and #{timeEnd}
+				</when>
+			</choose>
+		</where>
+	</select>
+
+	<!-- 精确查询，密码不能查询 -->
+	<select id="findExact" parameterType="UserVo" resultType="User">
+		SELECT
+		<include refid="col" />
+		FROM
+		user
+		<where>
+			<if test="userinfoid != null">
+				and userinfoid=#{userinfoid}
+			</if>
+			<if test="account != null and account != ''">
+				and account=#{account}
+			</if>
+			<if test="name != null and name != ''">
+				and name=#{name}
+			</if>
+			<if test="description != null and description != ''">
+				and description=#{description}
+			</if>
+			<if test="gender != null">
+				and gender=#{gender}
+			</if>
+			<if test="year != null">
+				and year=#{year}
+			</if>
+			<if test="type != null">
+				and type=#{type}
+			</if>
+			<if test="sizeone != null">
+				and sizeone=#{sizeone}
+			</if>
+			<if test="sizecurrent != null">
+				and sizecurrent=#{sizecurrent}
+			</if>
+			<if test="time != null">
+				and time=#{time}
+			</if>
+		</where>
+	</select>
+</mapper>
