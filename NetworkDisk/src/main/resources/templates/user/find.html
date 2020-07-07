@@ -1,0 +1,192 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/md5.js"></script>
+<script type="text/javascript" src="/js/reg-idcard.js"></script>
+<script type="text/javascript" src="/js/canvas-nest.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#logo {
+	width: 64px;
+}
+
+#table td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#table td:nth-child(1) {
+	text-align: right;
+}
+
+#table td:nth-child(2) {
+	padding: 0;
+	color: red;
+	font-size: 1.5em;
+}
+
+#table td:nth-child(3) {
+	padding: 0.5em 1em 0 1em;
+	width: 20em;
+}
+
+#table td:nth-child(4) {
+	color: red;
+}
+
+#loginAccount, #registerAccount {
+	font-size: 0.8em;
+}
+</style>
+<script>
+	/* 自动加载 设置enter键监听找回密码 */
+	$(function() {
+		CanvasNest();
+		$("#account").focus();
+		$(document).keydown(function(event) {
+			if (event.keyCode == 13) {
+				find();
+			}
+		});
+	});
+	/* 显示提示信息 */
+	function showTips(name, msg, color = "danger") {
+		$("#tips").remove();
+		var div = "<div id=\"tips\" class=\"alert alert-dismissable alert-" + color + "\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">×</button><span>" + msg + "</span></div>";
+		$("body").prepend(div);
+		$(".form-control").css("background", "#fff");
+		$("#" + name).css("background", "#faa");
+		$("#" + name).focus();
+	}
+	/* 找回密码 */
+	function find() {
+		var regPwd = /^.{8,16}$/;
+		var regName = /^[\u4e00-\u9fa5]{2,8}$/;
+		var regNumber = /^[1-9][0-9]{8}[0-9z][0-9]{3}$/;
+		var pwd = $("#pwd").val();
+		var pwd2 = $("#pwd2").val();
+		var name = $("#name").val();
+		var name = $("#name").val();
+		var number = $("#number").val();
+		var idcard = $("#idcard").val();
+		if (!regName.test(name)) {
+			showTips("name", "真实姓名格式错误！");
+			return false;
+		}
+		if (!regNumber.test(number)) {
+			showTips("number", "学号格式错误！");
+			return false;
+		}
+		if (!regIdcard(idcard)) {
+			showTips("idcard", "身份证号码格式错误！");
+			return false;
+		}
+		if (!regPwd.test(pwd)) {
+			showTips("pwd", "密码格式错误！");
+			return false;
+		}
+		if (pwd != pwd2) {
+			showTips("pwd2", "密码与确认密码不一致！");
+			return false;
+		}
+		pwd = hex_md5(pwd);
+		$.ajax({
+			url : "/user/find",
+			type : "post",
+			data : JSON.stringify({
+				pwd : pwd,
+				userInfoVo : {
+					name : name,
+					number : number,
+					idcard : idcard
+				}
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					window.location.href = "/";
+				} else {
+					showTips(null, data.msg);
+				}
+			},
+			error : function(e) {
+				showTips(null, "网络异常，请重试！", "warning");
+			}
+		});
+	}
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title">
+			<a href="/"><img id="logo" src="/img/logo.png" /></a><span>找回密码</span>
+		</div>
+	</div>
+	<div id="table">
+		<table>
+			<tr>
+				<td>真实姓名</td>
+				<td>*</td>
+				<td>
+					<input type="text" class="form-control" placeholder="请输入真实姓名" id="name" />
+				</td>
+				<td>要求：2-8字符中文汉字。</td>
+			</tr>
+			<tr>
+				<td>学号/工号</td>
+				<td>*</td>
+				<td>
+					<input type="text" class="form-control" placeholder="请输入学号/工号" id="number" />
+				</td>
+				<td>要求：学号13字符，工号9字符。</td>
+			</tr>
+			<tr>
+				<td>身份证号码</td>
+				<td>*</td>
+				<td>
+					<input type="text" class="form-control" placeholder="请输入身份证号码" id="idcard" />
+				</td>
+				<td>要求：18字符。x小写。</td>
+			</tr>
+			<tr>
+				<td>新密码</td>
+				<td>*</td>
+				<td>
+					<input type="password" class="form-control" placeholder="请输入密码" id="pwd" />
+				</td>
+				<td>要求：8-16字符。</td>
+			</tr>
+			<tr>
+				<td>确认密码</td>
+				<td>*</td>
+				<td>
+					<input type="password" class="form-control" placeholder="请输入确认密码" id="pwd2" />
+				</td>
+				<td>要求：需要与密码相同。</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="/user/login" id="loginAccount">登录账号</a><br> <a href="/user/register" id="registerAccount">注册账号</a>
+				</td>
+				<td></td>
+				<td>
+					<button class="btn btn-success btn-lg" onclick="find()">修改密码</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

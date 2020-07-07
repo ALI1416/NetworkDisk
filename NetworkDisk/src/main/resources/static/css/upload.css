@@ -1,0 +1,60 @@
+#upload {
+	display: none;
+}
+
+#uploadFileDiv {
+	background-color: #fff;;
+	border: 5px dashed #ddd;
+	height: 20em;
+	width: 30em;
+	border-radius: 2em;
+}
+
+#chooseFileDiv {
+	width: 15em;;
+	margin: 8em auto 6em;
+	text-align: center;
+}
+
+#fileListDiv {
+	margin: 0.5em;
+	display: none;
+}
+
+#fileListTableDiv {
+	margin-top: 0.5em;
+	overflow-y: scroll;
+	height: 14em;
+}
+
+#fileListTable {
+	width: 100%;
+}
+
+#fileListTable tr {
+	height: 2em;
+	border-bottom: 1px solid #bbb;
+}
+
+.fileIco {
+	width: 1em;
+}
+
+.fileSize {
+	text-align: right;
+	width: 5em;
+}
+
+.fileDelete {
+	text-align: right;
+	width: 3em;
+}
+
+.fileDeleteBtn {
+	background-color: rgba(255, 255, 255, 0);
+	border: 0px;
+}
+
+#fileMsg {
+	margin: 0.5em;
+}

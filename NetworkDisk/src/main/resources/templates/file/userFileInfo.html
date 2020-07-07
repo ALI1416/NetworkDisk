@@ -1,0 +1,199 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/ico.css" />
+<link type="text/css" rel="stylesheet" href="/css/tooltip.css" />
+<link type="text/css" rel="stylesheet" href="/css/util.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/tooltip.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#operation {
+	float: right;
+	margin-right: 5em;
+}
+
+#table td:nth-child(1) {
+	width: 1em;
+}
+
+#table td:nth-child(3) {
+	opacity: 0;
+	width: 10em;
+}
+
+#table tr:hover td:nth-child(3) {
+	opacity: 1;
+}
+
+#table td:nth-child(4) {
+	width: 6em;
+}
+
+#table td:nth-child(5) {
+	width: 4em;
+}
+
+#table td:nth-child(6) {
+	width: 11em;
+}
+</style>
+<script>
+	/* 自动加载 */
+	$(function() {
+		$.ajax({
+			url : "",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 2002) { //文件不存在
+					showTips(null, data.msg);
+					return false;
+				}
+				var d = data.data;
+				var f = d.folderInfo;
+				var folderIdAndName = ""; //附加文件夹id和名字
+				if (f == null) {
+					$("#title").text(d.name + "的文件");
+					$("#current-location").append("当前位置：<a href='/file/user/info/" + d.id + "'>" + d.name
+						+ "</a> / <a href='/file/user/file/info/" + d.id + "'>根目录</a>");
+				} else {
+					$("#title").text(f.name);
+					$("#current-location").append("当前位置：<a href='/file/user/info/" + d.id + "'>" + d.name
+						+ "</a> / <a href='/file/user/file/info/" + d.id
+						+ "'>根目录</a> / <a href='/file/folder/file/info/" + f.timestamp + "'>" + f.name + "</a>");
+					folderIdAndName = "?folderTimestamp=" + f.timestamp + "&folderName=" + f.name;
+				}
+				if (data.code == 0) {
+					var list = data.data.files;
+					if (list.length == 0) {
+						showTips(null, "文件为空！", "success");
+						return false;
+					}
+					var tr,
+						id,
+						name,
+						suffix,
+						timestamp,
+						size,
+						status,
+						uuid,
+						date,
+						isfolder,
+						islimit,
+						pwd,
+						previewFile,
+						shareFile,
+						clickFile,
+						clickDownload;
+					for (var i in list) {
+						id = list[i].id;
+						name = list[i].name;
+						isfolder = list[i].isfolder;
+						suffix = (isfolder == 1) ? "folder" : getFileSuffix(name);
+						islimit = list[i].islimit,
+						pwd = list[i].pwd;
+						timestamp = list[i].timestamp;
+						size = (isfolder == 1) ? "" : bytes2Size(list[i].length);
+						status = (pwd == 1 ? (islimit == 1 ? "密限" : "密码") : (islimit == 1 ? "限制" : ""));
+						uuid = list[i].uuid;
+						date = time2Date(list[i].time);
+						clickFile = (isfolder == 0) ? ("/file/file/info/" + timestamp + folderIdAndName)
+							: ("/file/folder/file/info/" + timestamp + folderIdAndName);
+						shareFile = "<button onClick='shareFile()' class='btn btn-xs btn-info'>分享</button>";
+						previewFile = (uuid.length == 0 || isfolder == 1) ? "" : "<button onClick='previewFile()' class='btn btn-xs btn-warning'>预览</button>";
+						downloadFile = (uuid.length == 0) ? ""
+							: ((isfolder == 1) ? "<button onClick='downloadFolder()' class='btn btn-xs btn-success'>下载</button>"
+								: ("<a href='/file/download/" + uuid + "' target='_blank'><button class='btn btn-xs btn-success'>下载</button></a>"));
+						tr = "<tr id='" + id + "' name='" + name + "' isfolder='" + isfolder + "' islimit='" + islimit + "' pwd='" + pwd + "' timestamp='" + timestamp + "' uuid='" + uuid + "'>";
+						tr += "<td><input type='checkbox' name='idcb' value='" + uuid + "'></td>";
+						tr += "<td><a href='" + clickFile + "'><img class='ico ico-" + suffix + "'>" + name + "</a></td>";
+						tr += "<td>" + shareFile + "&ensp;" + previewFile + "&ensp;" + downloadFile + "</td>";
+						tr += "<td>" + size + "</td>";
+						tr += "<td>" + status + "</td>";
+						tr += "<td>" + date + "</td></tr>";
+						$("#fileList").append(tr);
+					}
+				} else if (data.code == 2005) { //需要密码
+					var show = "<table><tr><td>请输入密码&emsp;</td><td><input type='text' class='form-control' id='pwd' /></td><td>&emsp;"
+						+ "<button class='btn btn-success' onClick='pwd()'>确定</button></td></tr></table>";
+					showTips(null, show, "warning");
+					return false;
+				} else if (data.code == 2006) { //密码错误
+					var show = "<table><tr><td>密码错误！请重新输入！&emsp;</td><td><input type='text' class='form-control' id='pwd' /></td><td>&emsp;"
+						+ "<button class='btn btn-success' onClick='pwd()'>确定</button></td></tr></table>";
+					showTips(null, show);
+					return false;
+				} else { //其他错误
+					showTips(null, data.msg);
+					return false;
+				}
+			},
+			error : function(e) {
+				showTips(null, "网络异常，请重试！", "warning");
+			}
+		})
+		/* 全选checkbox添加监听事件 */
+		$("#selectAll").click(function() {
+			if ($(this).is(":checked")) {
+				$("input[name='idcb']").prop("checked", true);
+			} else {
+				$("input[name='idcb']").prop("checked", false);
+			}
+		});
+	});
+	/* 输入密码 */
+	function pwd() {
+		var pwd = $("#pwd").val();
+		if (pwd.length != 4) {
+			var show = "<table><tr><td>密码错误！请重新输入！&emsp;</td><td><input type='text' class='form-control' id='pwd' /></td><td>&emsp;"
+				+ "<button class='btn btn-success' onClick='pwd()'>确定</button></td></tr></table>";
+			showTips(null, show);
+			return false;
+		}
+		window.location.href = window.location.pathname + "?pwd=" + pwd;
+	}
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title"></div>
+		<div id="current-location"></div>
+		<div id="operation">
+			<button class="btn btn-primary" onClick="downloadPackage()">打包下载</button>
+		</div>
+	</div>
+	<div id="table">
+		<table class="table table-hover table-striped table-condensed">
+			<thead>
+				<tr>
+					<th>
+						<input type="checkbox" id="selectAll">
+					</th>
+					<th>文件名</th>
+					<th></th>
+					<th>文件大小</th>
+					<th>状态</th>
+					<th>上传时间</th>
+				</tr>
+			</thead>
+			<tbody id="fileList"></tbody>
+		</table>
+	</div>
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/ico.css" />
+<link type="text/css" rel="stylesheet" href="/css/switch.css" />
+<link type="text/css" rel="stylesheet" href="/css/tooltip.css" />
+<link type="text/css" rel="stylesheet" href="/css/toPage.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/tooltip.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<script type="text/javascript" src="/js/toPage.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+#search {
+	margin-top: 1em;
+}
+
+#search td, #showMore td {
+	width: 6em;
+	line-height: 40px;
+}
+
+#search select, #showMore select {
+	padding: 0 0 0 0.2em;
+}
+
+#search input[type="text"], #showMore input[type="text"] {
+	width: 100%;
+}
+
+.tRight {
+	text-align: right;
+	padding-right: 0.5em;
+}
+
+.tCenter {
+	text-align: center;
+	padding-right: 0.5em;
+}
+
+#realnameInfo {
+	margin-top: 1em;
+}
+
+#realnameInfo td {
+	vertical-align: middle;
+}
+
+#realnameInfo input[type="text"] {
+	background-color: rgba(255, 255, 255, 0);
+	border: solid #c1c1c1 1px;
+	width: 100%;
+}
+
+#realnameInfo .visi {
+	visibility: hidden;
+}
+
+#realnameInfo tr:hover .visi {
+	visibility: visible;
+}
+</style>
+<script>
+	$(function() {
+		initSearch();
+		initRealnameInfo(JSON.stringify({
+			orderBy : "id desc"
+		}));
+	});
+	function initPage(current_page) {
+		var json = searchJson();
+		if (json != false) {
+			initRealnameInfo(json, current_page);
+		}
+	}
+	function initRealnameInfo(json, current_page = 1) {
+		$("#realnameList").empty();
+		tips();
+		$.ajax({
+			url : "/admin/realnameAll?pages=" + current_page,
+			type : "post",
+			data : json,
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var total_page = data.data.pages;
+				toPage(initPage, total_page, current_page);
+				var list = data.data.list;
+				var tr,
+					id,
+					name,
+					number,
+					idcard,
+					type;
+				for (var i in list) {
+					id = list[i].id;
+					name = list[i].name;
+					number = list[i].number;
+					idcard = list[i].idcard;
+					type = list[i].type;
+					tr = "<tr realnameid='" + id + "'>"
+						+ "<td><input type='checkbox' value='" + id + "' name='idcb' /></td>"
+						+ "<td>" + id + "</td>"
+						+ "<td><select id='type" + id + "'><option value='0'>已删除</option><option value='1'>根用户</option><option value='2'>管理员</option><option value='3'>教师</option><option value='4'>学生</option></select></td>"
+						+ "<td><input type='text' id='name" + id + "' value='" + name + "' /></td>"
+						+ "<td><input type='text' id='number" + id + "' value='" + number + "' /></td>"
+						+ "<td><input type='text' id='idcard" + id + "' value='" + idcard + "' /></td>"
+						+ "<td><button class='btn btn-success btn-xs visi' onClick='moreInfo()'>更多</button></td>"
+						+ "<td><button class='btn btn-warning btn-xs visi' onClick='changeInfo()'>改</button></td>"
+						+ "<td></td>"
+						+ "</tr>"
+					$("#realnameList").append(tr);
+					$("#type" + id).val(type);
+				}
+			}
+		});
+	}
+	function moreInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var id = tr.attr("realnameid");
+		$.ajax({
+			url : "/admin/userByRealnameId/" + id,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var h;
+				if (d != null) {
+					var userid = d.id;
+					var account = d.account;
+					var name = d.name;
+					var gender = d.gender == 1 ? "男" : "女";
+					var year = d.year;
+					var type = userType2Str(d.type);
+					var description = d.description;
+					var sizeall = d.sizeall;
+					var sizeone = d.sizeone;
+					var sizecurrent = d.sizecurrent;
+					var time = time2Date(d.time);
+					h = "<table>"
+						+ "<tr><td class='tRight'>用户ID</td><td>" + userid + "</td></tr>"
+						+ "<tr><td class='tRight'>用户类型</td><td>" + type + "</td></tr>"
+						+ "<tr><td class='tRight'>账号</td><td>" + account + "</td></tr>"
+						+ "<tr><td class='tRight'>昵称</td><td>" + name + "</td></tr>"
+						+ "<tr><td class='tRight'>性别</td><td>" + gender + "</td></tr>"
+						+ "<tr><td class='tRight'>出生年</td><td>" + year + "</td></tr>"
+						+ "<tr><td class='tRight'>描述</td><td style='max-width:20em;'>" + description + "</td></tr>"
+						+ "<tr><td class='tRight'>总容量</td><td>" + sizeall + "MB</td></tr>"
+						+ "<tr><td class='tRight'>单文件容量</td><td>" + sizeone + "MB</td></tr>"
+						+ "<tr><td class='tRight'>已使用容量</td><td>" + sizecurrent + "MB</td></tr>"
+						+ "<tr><td class='tRight'>注册时间</td><td>" + time + "</td></tr>"
+						+ "<tr><td class='tRight'>&emsp;</td></tr>"
+						+ "<tr><td class='tRight'>用户信息</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+						+ "<tr><td class='tRight'>所有文件</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+						+ "</table>";
+				} else {
+					h = "<table>"
+						+ "<tr><td colspan='2'>用户未注册</td></tr>"
+						+ "<tr><td class='tRight'>实名信息</td><td><a href='/jump?jump=/admin/info/realname/" + id + "' target='_blank'>查询</a></td></tr>"
+						+ "</table>";
+				}
+				tips(t, h);
+			}
+		});
+	}
+	function changeInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var id = tr.attr("realnameid");
+		var name = $("#name" + id).val();
+		var number = $("#number" + id).val();
+		var idcard = $("#idcard" + id).val();
+		var type = $("#type" + id).val();
+		$.ajax({
+			url : "/admin/edit/realname",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				name : name,
+				number : number,
+				idcard : idcard,
+				type : type
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				tips(t, "修改成功");
+			}
+		});
+	}
+	function initSearch() {
+		$("#numberText,#idcardText").tooltip({
+			fallback : "模糊查询：至少输入1个字符。",
+			html : true
+		});
+		$("#showMore").hide();
+	}
+	function search() {
+		var json = searchJson();
+		if (json != false) {
+			initRealnameInfo(json);
+		}
+	}
+	function searchJson() {
+		var nameText = $("#nameText").val();
+		var numberText = $("#numberText").val();
+		var idcardText = $("#idcardText").val();
+		var typeText = $("input[name='type']:checked").val();
+		var orderText = $("input[name='order']:checked").val();
+		var orderDescText = $("input[name='orderDesc']:checked").val();
+		/*对应字段*/
+		var name = null,
+			number = null,
+			idcard = null,
+			type = null,
+			orderBy = "id desc";
+		if (nameText.length != 0) {
+			name = nameText;
+		}
+		if (!$("#showMore").is(":hidden")) {
+			if (numberText.length != 0) {
+				number = numberText;
+			}
+			if (idcardText.length != 0) {
+				idcard = idcardText;
+			}
+			if (typeText != "null") {
+				type = typeText;
+			}
+			if (orderText != "null") {
+				orderBy = orderText;
+				if (orderDescText) {
+					orderBy += " desc";
+				}
+			}
+		}
+		var json = JSON.stringify({
+			name : name,
+			number : number,
+			idcard : idcard,
+			type : type,
+			orderBy : orderBy
+		});
+		return json;
+	}
+	function showMore() {
+		if ($("#showMore").is(":hidden")) {
+			$("#showMore").show();
+			$("#showMoreBtn").text("更少选项");
+		} else {
+			$("#showMore").hide();
+			$("#showMoreBtn").text("更多选项");
+		}
+	}
+	function upload() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var formData = new FormData();
+		formData.append("file", $("#file")[0].files[0]);
+		$.ajax("/admin/realname/upload", {
+			type : 'post',
+			data : formData,
+			async : false,
+			cache : false,
+			processData : false,
+			contentType : false,
+			success : function(data) {
+				if (data.code == 0) {
+					tips(t, "上传成功，请<a href='javascript:location.reload();'>刷新</a>此页面。");
+				} else {
+					tips(t, "上传失败，请重试！");
+				}
+			},
+			error : function(data) {
+				tips(t, "上传失败，请重试！");
+			},
+		});
+	}
+</script>
+</head>
+<body>
+	<table id="search">
+		<tr>
+			<td class="tRight">姓名</td>
+			<td style="width:42em;">
+				<input type="text" class="form-control" id="nameText">
+			</td>
+			<td style="text-align: right;">
+				<button class="btn btn-primary" onClick="search()">搜索</button>
+			</td>
+			<td style="text-align: right;">
+				<button class="btn btn-warning" onClick="showMore()" id="showMoreBtn">更多选项</button>
+			</td>
+		</tr>
+	</table>
+	<table id="showMore">
+		<tr>
+			<td class="tRight">学号</td>
+			<td colspan="4" style="width:24em;">
+				<input type="text" class="form-control" id="numberText">
+			</td>
+			<td class="tRight">身份证号码</td>
+			<td colspan="4" style="width:24em;">
+				<input type="text" class="form-control" id="idcardText">
+			</td>
+		</tr>
+		<tr>
+			<td class="tRight">用户类型</td>
+			<td colspan="9" style="width:54em;">
+				<input type="radio" value="null" name="type" checked>不限&emsp;<input type="radio" value="0" name="type">已删除&emsp;<input type="radio" value="1" name="type">根用户&emsp;<input
+					type="radio" value="2" name="type">管理员&emsp;<input type="radio" value="3" name="type">教师&emsp;<input type="radio" value="4" name="type">学生
+			</td>
+		</tr>
+		<tr>
+			<td class="tRight">排序</td>
+			<td colspan="9">
+				<input type="radio" value="null" name="order" checked>默认&emsp;<input type="radio" value="id" name="order">ID&emsp;<input type="radio" value="type" name="order">用户类型&emsp;<input
+					type="radio" value="name" name="order">姓名&emsp;<input type="radio" value="number" name="order">学号&emsp;<input type="radio" value="idcard" name="order">身份证号码&emsp;<input
+					type="checkbox" value="1" name="orderDesc">倒序
+			</td>
+		</tr>
+		<tr>
+			<td colspan="10" class="tRight">
+				<a href="/templates/userInfo.csv">下载模板</a>&emsp;<input type="file" id="file" style="display:inline;">
+				<button style="display:inline;" class="btn btn-success" onclick="upload()">导入实名信息</button>
+			</td>
+		</tr>
+	</table>
+	<table class="table table-hover table-striped table-condensed table-bordered1" id="realnameInfo">
+		<thead>
+			<tr>
+				<th style="width: 2em;">
+					<input type="checkbox" id="selectAll">
+				</th>
+				<th style="width: 2em;">ID</th>
+				<th style="width: 4em;">用户类型</th>
+				<th style="width: 10em;">姓名</th>
+				<th style="width: 20em;">学号</th>
+				<th style="width: 20em;">身份证号码</th>
+				<th style="width: 2em;"></th>
+				<th style="width: 2em;"></th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody id="realnameList"></tbody>
+	</table>
+	<div id="toPage"></div>
+</body>
+</html>
