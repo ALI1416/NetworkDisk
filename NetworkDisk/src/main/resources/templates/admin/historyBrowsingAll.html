@@ -1,0 +1,506 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/ico.css" />
+<link type="text/css" rel="stylesheet" href="/css/switch.css" />
+<link type="text/css" rel="stylesheet" href="/css/tooltip.css" />
+<link type="text/css" rel="stylesheet" href="/css/toPage.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/tooltip.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<script type="text/javascript" src="/js/toPage.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+#search {
+	margin-top: 1em;
+}
+
+#search td, #showMore td {
+	width: 6em;
+	line-height: 40px;
+}
+
+#search select, #showMore select {
+	padding: 0 0 0 0.2em;
+}
+
+#search input[type="text"], #showMore input[type="text"] {
+	width: 100%;
+}
+
+.tRight {
+	text-align: right;
+	padding-right: 0.5em;
+}
+
+.tCenter {
+	text-align: center;
+	padding-right: 0.5em;
+}
+
+#realnameInfo {
+	margin-top: 1em;
+}
+
+#realnameInfo td {
+	vertical-align: middle;
+}
+
+#realnameInfo input[type="text"] {
+	background-color: rgba(255, 255, 255, 0);
+	border: solid #c1c1c1 1px;
+	width: 100%;
+}
+
+#realnameInfo .visi {
+	visibility: hidden;
+}
+
+#realnameInfo tr:hover .visi {
+	visibility: visible;
+}
+</style>
+<script>
+	$(function() {
+		initSearch();
+		initHistoryBrowsingInfo(JSON.stringify({
+			orderBy : "id desc"
+		}));
+	});
+	function initPage(current_page) {
+		var json = searchJson();
+		if (json != false) {
+			initHistoryBrowsingInfo(json, current_page);
+		}
+	}
+	function initHistoryBrowsingInfo(json, current_page = 1) {
+		$("#historyBrowsingList").empty();
+		tips();
+		$.ajax({
+			url : "/admin/historyBrowsingAll?pages=" + current_page,
+			type : "post",
+			data : json,
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var total_page = data.data.pages;
+				toPage(initPage, total_page, current_page);
+				var list = data.data.list;
+				var tr,
+					id,
+					userid,
+					fileid,
+					ip,
+					time;
+				for (var i in list) {
+					id = list[i].id;
+					userid = list[i].userid;
+					fileid = list[i].fileid;
+					ip = long2Ip(list[i].ip);
+					time = time2Date(list[i].time);
+					tr = "<tr historyBrowsingid='" + id + "' userid='" + userid + "' fileid='" + fileid + "'>"
+						+ "<td><input type='checkbox' value='" + id + "' name='idcb' /></td>"
+						+ "<td>" + id + "</td>"
+						+ "<td>" + userid + "</td>"
+						+ "<td><button class='btn btn-success btn-xs visi' onClick='userInfo()'>查</button></td>"
+						+ "<td>" + fileid + "</td>"
+						+ "<td><button class='btn btn-success btn-xs visi' onClick='fileInfo()'>查</button></td>"
+						+ "<td>" + ip + "</td>"
+						+ "<td id='ip" + id + "'></td>"
+						+ "<td>" + time + "</td>"
+						+ "<td></td>"
+						+ "</tr>";
+					$("#historyBrowsingList").append(tr);
+					ip2Addr("ip" + id, ip);
+				}
+			}
+		});
+	}
+	function userInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var userid = tr.attr("userid");
+		$.ajax({
+			url : "/admin/user/" + userid,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var u = d.userInfo;
+				var account = d.account;
+				var name = d.name;
+				var gender = d.gender == 1 ? "男" : "女";
+				var year = d.year;
+				var type = userType2Str(d.type);
+				var description = d.description;
+				var sizeall = d.sizeall;
+				var sizeone = d.sizeone;
+				var sizecurrent = d.sizecurrent;
+				var time = time2Date(d.time);
+				var userinfoid = u.id;
+				var type2 = userType2Str(u.type);
+				var name2 = u.name;
+				var number = u.number;
+				var idcard = u.idcard;
+				var h = "<table>"
+					+ "<tr><td class='tRight'>用户ID</td><td>" + userid + "</td></tr>"
+					+ "<tr><td class='tRight'>用户类型</td><td>" + type + "</td></tr>"
+					+ "<tr><td class='tRight'>账号</td><td>" + account + "</td></tr>"
+					+ "<tr><td class='tRight'>昵称</td><td>" + name + "</td></tr>"
+					+ "<tr><td class='tRight'>性别</td><td>" + gender + "</td></tr>"
+					+ "<tr><td class='tRight'>出生年</td><td>" + year + "</td></tr>"
+					+ "<tr><td class='tRight'>描述</td><td style='max-width:20em;'>" + description + "</td></tr>"
+					+ "<tr><td class='tRight'>总容量</td><td>" + sizeall + "MB</td></tr>"
+					+ "<tr><td class='tRight'>单文件容量</td><td>" + sizeone + "MB</td></tr>"
+					+ "<tr><td class='tRight'>已使用容量</td><td>" + sizecurrent + "MB</td></tr>"
+					+ "<tr><td class='tRight'>注册时间</td><td>" + time + "</td></tr>"
+					+ "<tr><td class='tRight'>&emsp;</td></tr>"
+					+ "<tr><td class='tRight'>实名ID</td><td>" + userinfoid + "</td></tr>"
+					+ "<tr><td class='tRight'>实名类型</td><td>" + type2 + "</td></tr>"
+					+ "<tr><td class='tRight'>真实姓名</td><td>" + name2 + "</td></tr>"
+					+ "<tr><td class='tRight'>学号</td><td>" + number + "</td></tr>"
+					+ "<tr><td class='tRight'>身份证号码</td><td>" + idcard + "</td></tr>"
+					+ "<tr><td class='tRight'>&emsp;</td></tr>"
+					+ "<tr><td class='tRight'>用户信息</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+					+ "<tr><td class='tRight'>所有文件</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+				tips(t, h);
+			}
+		});
+	}
+	function fileInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var fileid = tr.attr("fileid");
+		$.ajax({
+			url : "/admin/file/" + fileid,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var userid = d.userid;
+				var name = d.name;
+				var size = bytes2Size(d.length);
+				var description = d.description;
+				var md5 = d.md5;
+				var uuid = d.uuid;
+				var download = d.download;
+				var browsing = d.browsing;
+				var timestamp = d.timestamp;
+				var time = time2Date(d.time);
+				var h = "<table>"
+					+ "<tr><td class='tRight'>文件名</td><td style='max-width:20em;'>" + name + "</td></tr>"
+					+ "<tr><td class='tRight'>文件大小</td><td>" + size + "</td></tr>"
+					+ "<tr><td class='tRight'>下载地址</td><td><a class='visi' href='/file/download/" + uuid + "' target='_blank'>下载</a></td></tr>"
+					+ "<tr><td class='tRight'>文件描述</td><td style='max-width:20em;'>" + description + "</td></tr>"
+					+ "<tr><td class='tRight'>文件MD5</td><td>" + md5 + "</td></tr>"
+					+ "<tr><td class='tRight'>浏览次数</td><td>" + browsing + "</td></tr>"
+					+ "<tr><td class='tRight'>下载次数</td><td>" + download + "</td></tr>"
+					+ "<tr><td class='tRight'>上传时间</td><td>" + time + "</td></tr>"
+					+ "<tr><td class='tRight'>&emsp;</td></tr>"
+					+ "<tr><td class='tRight'>文件信息</td><td><a href='/jump?jump=/admin/info/file/" + fileid + "' target='_blank'>查询</a></td></tr>"
+					+ "<tr><td class='tRight'>用户信息</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+					+ "<tr><td class='tRight'>所有文件</td><td><a href='/jump?jump=/admin/info/user/" + userid + "' target='_blank'>查询</a></td></tr>"
+					+ "</table>";
+				tips(t, h);
+			}
+		});
+	}
+	function initSearch() {
+		$("#ipLeft,#ipRight").tooltip({
+			fallback : "请输入IP地址。<br>例如：123.45.67.89。",
+			html : true
+		});
+		$("#timeLeft,#timeRight").tooltip({
+			fallback : "请输入时间。<br>例如：等于20190102030405表示2019年01月02日03时04分05秒。<br>输入不全自动转义。<br>例如：等于2019表示2019年1月到12月。<br>介于201706到2020表示2017年6月到2019年12月。",
+			html : true
+		});
+		$("#showMore,#ipLeft,#ipTo,#ipRight,#timeLeft,#timeTo,#timeRight").hide();
+		$("#ipOpt").change(function() {
+			var o = $(this).val();
+			if (o == "null") {
+				$("#ipTo,#ipLeft,#ipRight").hide();
+			} else if (o == "bt" || o == "nbt") {
+				$("#ipTo,#ipLeft,#ipRight").show();
+			} else {
+				$("#ipLeft").show();
+				$("#ipTo,#ipRight").hide();
+			}
+		});
+		$("#timeOpt").change(function() {
+			var o = $(this).val();
+			if (o == "null") {
+				$("#timeTo,#timeLeft,#timeRight").hide();
+			} else if (o == "bt" || o == "nbt") {
+				$("#timeTo,#timeLeft,#timeRight").show();
+			} else {
+				$("#timeLeft").show();
+				$("#timeTo,#timeRight").hide();
+			}
+		});
+	}
+	function search() {
+		var json = searchJson();
+		if (json != false) {
+			initHistoryBrowsingInfo(json);
+		}
+	}
+	function searchJson() {
+		var useridText = $("#useridText").val();
+		var fileidText = $("#fileidText").val();
+		var ipOpt = $("#ipOpt").val();
+		var ipLeft = $("#ipLeft").val();
+		var ipRight = $("#ipRight").val();
+		var timeOpt = $("#timeOpt").val();
+		var timeLeft = $("#timeLeft").val();
+		var timeRight = $("#timeRight").val();
+		var orderText = $("input[name='order']:checked").val();
+		var orderDescText = $("input[name='orderDesc']:checked").val();
+		/*对应字段*/
+		var userid = null,
+			fileid = null,
+			ip = null,
+			ipEnd = null,
+			ipNot = null,
+			time = null,
+			timeEnd = null,
+			timeNot = null,
+			orderBy = "id desc";
+		if (useridText.length != 0) {
+			userid = useridText;
+		}
+		if (fileidText.length != 0) {
+			fileid = fileidText;
+		}
+		if (!$("#showMore").is(":hidden")) {
+			if (ipOpt != "null") {
+				if (ipLeft.length == 0) {
+					showTips("ipLeft", "IP地址未输入!");
+					return false;
+				} else {
+					if (!isIP(ipLeft)) {
+						showTips("ipLeft", "IP地址格式错误!");
+						return false;
+					}
+					ip = ip2Long(ipLeft);
+				}
+				if (ipOpt == "bt" || ipOpt == "nbt") {
+					if (ipRight.length == 0) {
+						showTips("ipRight", "IP地址未输入!");
+						return false;
+					} else {
+						if (!isIP(ipRight)) {
+							showTips("ipRight", "IP地址格式错误!");
+							return false;
+						}
+						ipEnd = ip2Long(ipRight);
+						if (ip >= ipEnd) {
+							showTips("ipEnd", "右侧不可小于左侧!");
+							return false;
+						}
+					}
+				}
+				if (ipOpt == "is") {
+					ipEnd = ip;
+				} else if (ipOpt == "not") {
+					ipNot = 1;
+					ipEnd = ip;
+				} else if (ipOpt == "lt") {
+					ipEnd = ip;
+					ip = null;
+				} else if (ipOpt == "nbt") {
+					ipNot = 1;
+				}
+			}
+			if (timeOpt != "null") {
+				if (timeLeft.length == 0) {
+					showTips("timeLeft", "时间未输入!");
+					return false;
+				} else {
+					time = date2Time(timeLeft);
+					if (time == -1) {
+						showTips("timeLeft", "时间格式错误!");
+						return false;
+					}
+				}
+				if (timeOpt == "bt" || timeOpt == "nbt") {
+					if (timeRight.length == 0) {
+						showTips("timeRight", "时间未输入!");
+						return false;
+					} else {
+						timeEnd = date2Time(timeRight);
+						if (time == -1) {
+							showTips("timeRight", "时间格式错误!");
+							return false;
+						}
+					}
+					if (time >= timeRight) {
+						showTips("timeRight", "右侧不可小于左侧!");
+						return false;
+					}
+				}
+				if (timeOpt == "is") {
+					timeEnd = time;
+					if (timeLeft.length != 14) {
+						timeEnd = date2Time((Number(timeLeft) + 1).toString());
+					}
+				} else if (timeOpt == "not") {
+					timeNot = 1;
+					timeEnd = time;
+					if (timeLeft.length != 14) {
+						timeEnd = date2Time((Number(timeLeft) + 1).toString());
+					}
+				} else if (timeOpt == "lt") {
+					timeEnd = time;
+					time = null;
+				} else if (timeOpt == "nbt") {
+					timeNot = 1;
+				}
+			}
+			if (orderText != "null") {
+				orderBy = orderText;
+				if (orderDescText) {
+					orderBy += " desc";
+				}
+			}
+		}
+		var json = JSON.stringify({
+			userid : userid,
+			fileid : fileid,
+			ip : ip,
+			ipEnd : ipEnd,
+			ipNot : ipNot,
+			time : time,
+			timeEnd : timeEnd,
+			timeNot : timeNot,
+			orderBy : orderBy
+		});
+		return json;
+	}
+	function showMore() {
+		if ($("#showMore").is(":hidden")) {
+			$("#showMore").show();
+			$("#showMoreBtn").text("更少选项");
+		} else {
+			$("#showMore").hide();
+			$("#showMoreBtn").text("更多选项");
+		}
+	}
+</script>
+</head>
+<body>
+	<table id="search">
+		<tr>
+			<td class="tRight">用户ID</td>
+			<td>
+				<input type="text" class="form-control" id="useridText">
+			</td>
+			<td class="tRight">文件ID</td>
+			<td>
+				<input type="text" class="form-control" id="fileidText">
+			</td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td style="text-align: right;">
+				<button class="btn btn-primary" onClick="search()">搜索</button>
+			</td>
+			<td style="text-align: right;">
+				<button class="btn btn-warning" onClick="showMore()" id="showMoreBtn">更多选项</button>
+			</td>
+		</tr>
+	</table>
+	<table id="showMore">
+		<tr>
+			<td class="tRight">IP地址</td>
+			<td>
+				<select class="form-control" id="ipOpt">
+					<option value="null" selected>不限</option>
+					<option value="is">等于</option>
+					<option value="not">不等于</option>
+					<option value="gt">大于</option>
+					<option value="lt">小于</option>
+					<option value="bt">介于</option>
+					<option value="nbt">不介于</option>
+				</select>
+			</td>
+			<td style="width:12em;">
+				<input type="text" class="form-control" id="ipLeft">
+			</td>
+			<td class="tCenter">
+				<span id="ipTo">到</span>
+			</td>
+			<td style="width:12em;">
+				<input type="text" class="form-control" id="ipRight">
+			</td>
+		</tr>
+		<tr>
+			<td class="tRight">浏览时间</td>
+			<td>
+				<select class="form-control" id="timeOpt">
+					<option value="null" selected>不限</option>
+					<option value="is">等于</option>
+					<option value="not">不等于</option>
+					<option value="gt">大于</option>
+					<option value="lt">小于</option>
+					<option value="bt">介于</option>
+					<option value="nbt">不介于</option>
+				</select>
+			</td>
+			<td style="width:12em;">
+				<input type="text" class="form-control" id="timeLeft">
+			</td>
+			<td class="tCenter">
+				<span id="timeTo">到</span>
+			</td>
+			<td style="width:12em;">
+				<input type="text" class="form-control" id="timeRight">
+			</td>
+		</tr>
+		<tr>
+			<td class="tRight">排序</td>
+			<td colspan="9">
+				<input type="radio" value="null" name="order" checked>默认&emsp;<input type="radio" value="id" name="order">浏览时间&emsp;<input type="radio" value="userid" name="order">用户ID&emsp;<input
+					type="radio" value="fileid" name="order">文件ID&emsp;<input type="radio" value="ip" name="order">IP地址&emsp;<input type="checkbox" value="1" name="orderDesc">倒序
+			</td>
+		</tr>
+	</table>
+	<table class="table table-hover table-striped table-condensed table-bordered1" id="realnameInfo">
+		<thead>
+			<tr>
+				<th style="width: 2em;">
+					<input type="checkbox" id="selectAll">
+				</th>
+				<th style="width: 4em;">ID</th>
+				<th style="width: 4em;">用户ID</th>
+				<th style="width: 2em;"></th>
+				<th style="width: 4em;">文件ID</th>
+				<th style="width: 2em;"></th>
+				<th style="width: 10em;">IP地址</th>
+				<th style="width: 12em;">地理位置</th>
+				<th style="width: 11em;">浏览时间</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody id="historyBrowsingList"></tbody>
+	</table>
+	<div id="toPage"></div>
+</body>
+</html>

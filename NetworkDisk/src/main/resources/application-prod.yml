@@ -1,0 +1,17 @@
+debug: false
+server:
+  port: 8080
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/networkdisk?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2048MB
+      max-request-size: 2048MB
+mybatis:
+  mapper-locations: classpath*:com/ck/dao/*.xml
+  type-aliases-package: com.ck.po,com.ck.vo

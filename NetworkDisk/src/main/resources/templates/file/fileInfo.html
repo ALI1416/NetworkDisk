@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/tooltip.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<script type="text/javascript" src="/js/tooltip.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#table td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#table td:nth-child(1), .t2 td:nth-child(3) {
+	text-align: right;
+	width: 8em;
+}
+
+.t2 td:nth-child(2) *, .t2 td:nth-child(4) * {
+	width: 8em;
+}
+
+#description {
+	height: 8em;
+}
+
+#link, #pwd, #pwdBtn {
+	display: none;
+}
+</style>
+<script>
+	/* 自动加载 */
+	$(function() {
+		$.ajax({
+			url : "",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					var d = data.data;
+					var f = d.file;
+					var o = d.folderInfo;
+					$("#title").text(f.name);
+					$("#title").attr("fileid", f.id);
+					if (o == null) {
+						$("#current-location").append("当前位置：<a href='/file/user/info/" + d.id + "'>" + d.name
+							+ "</a> / <a href='/file/user/file/info/" + d.id + "'>根目录</a> / <a href=''>" + f.name + "</a>");
+					} else {
+						$("#current-location").append("当前位置：<a href='/file/user/info/" + d.id + "'>" + d.name
+							+ "</a> / <a href='/file/user/file/info/" + d.id
+							+ "'>根目录</a> / <a href='/file/folder/file/info/" + o.timestamp + "'>" + o.name + "</a> / <a href=''>" + f.name + "</a>");
+					}
+					$("#name").text(f.name);
+					$("#description").text(f.description);
+					$("#time").text(time2Date(f.time));
+					$("#md5").text(f.md5);
+					$("#browsing").text(f.browsing + "次");
+					$("#download").text(f.download + "次");
+					$("#length").text(bytes2Size(f.length));
+					$("#tipOff").text("请发送文件ID " + f.id + " 和举报内容到邮箱 tip-off@404z.cn");
+					var link = window.location.protocol + "//" + window.location.host + "/z/" + f.timestamp;
+					if (f.islimit == 1 && f.uuid.length == 0) { //没有登录
+						$("#link").show();
+						$("#link").append("请登录");
+						$("#pwd").hide();
+						$("#pwdBtn").hide();
+					} else {
+						if (f.pwd == 1) { //有密码
+							$("#pwd").show();
+							$("#pwdBtn").show();
+							$("#link").hide();
+							link += " 密码：未知";
+						} else { //没有密码
+							$("#link").show();
+							$("#link").append("<a href='/file/download/" + f.uuid + "' target='_blank'>下载</a>");
+							$("#pwd").hide();
+							$("#pwdBtn").hide();
+						}
+					}
+					$("#linkText").text(link);
+					$("#copyLinkBtn").click(function() {
+						copyLink("#copyLinkBtn", "分享文件【" + f.name + "】下载地址: " + link);
+					});
+				} else {
+					$("#title").text("文件不存在");
+				}
+			}
+		});
+	});
+	function pwd() {
+		var pwd = $("#pwd").val();
+		if (pwd.length != 4) {
+			showTips("pwd", "密码错误");
+			return false;
+		}
+		$.ajax({
+			url : window.location.pathname + "?pwd=" + pwd,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					$("#link").show();
+					$("#pwd").hide();
+					$("#pwdBtn").hide();
+					var url = "/file/download/" + data.data.uuid;
+					$("#link").append("<a href='" + url + "' target='_blank'>下载</a>");
+					showTips(null, "<a href='" + url + "' target='_blank'>如果没有弹出下载页面，请点击此处下载。</a>", "success");
+					window.open(url);
+				} else {
+					showTips("pwd", data.msg);
+				}
+			}
+		});
+	}
+	function tipOff() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		var h = "<table><tr><td>举报内容&ensp;</td><td><input type='text' id='tipOffText' class='form-control' placeholder='请输入举报内容'></td><td>&ensp;<button class='btn btn-success' onClick='tipOffOk()'>举报</button></td></tr></table>"
+		tips(t, h);
+	}
+	function tipOffOk() {
+		var fileid = $("#title").attr("fileid");
+		var text = $("#tipOffText").val();
+		if (text.length == 0) {
+			$("#tipOffText").css("background", "#faa");
+			return false;
+		}
+		$.ajax({
+			url : "/file/tipOff",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			data : JSON.stringify({
+				fileid : fileid,
+				text : text
+			}),
+			success : function(data) {
+				if (data.code == 0) {
+					tips();
+					showTips(null, "举报成功！", "success");
+				} else {
+					showTips(null, data.msg);
+				}
+
+			}
+		});
+	}
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title"></div>
+		<div id="current-location"></div>
+	</div>
+	<div id="table">
+		<table>
+			<tr class="t1">
+				<td>文件名</td>
+				<td colspan="3">
+					<label class="form-control" id="name"></label>
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>文件描述</td>
+				<td colspan="3">
+					<label class="form-control" id="description"></label>
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>文件上传时间</td>
+				<td colspan="3">
+					<label class="form-control" id="time"></label>
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>文件MD5</td>
+				<td colspan="3">
+					<label class="form-control" id="md5"></label>
+				</td>
+			</tr>
+			<tr class="t2">
+				<td>文件浏览次数</td>
+				<td>
+					<label class="form-control" id="browsing"></label>
+				</td>
+				<td>文件下载次数</td>
+				<td>
+					<label class="form-control" id="download"></label>
+				</td>
+			</tr>
+			<tr class="t2">
+				<td>文件大小</td>
+				<td>
+					<label class="form-control" id="length"></label>
+				</td>
+				<td>文件下载地址</td>
+				<td>
+					<label class="form-control" id="link"></label><input type="text" class="form-control" placeholder="请输入密码" id="pwd" />
+				</td>
+				<td>
+					<button class="btn btn-success" onClick="pwd()" id="pwdBtn">确定</button>
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>分享</td>
+				<td colspan="3">
+					<label class="form-control" id="linkText"></label>
+				</td>
+				<td>
+					<button class="btn btn-info" id="copyLinkBtn">复制</button>
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>
+					<a href="#" onClick="tipOff()">举报</a>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

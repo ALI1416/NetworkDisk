@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/switch.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#table td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#table td:nth-child(1), .t3 td:nth-child(3) {
+	text-align: right;
+	width: 8em;
+}
+
+.t3 td:nth-child(2), .t3 td:nth-child(4) {
+	width: 8em;
+}
+
+#pwdText {
+	display: inline;
+}
+</style>
+<script>
+	/* 自动加载 */
+	$(function() {
+		$.ajax({
+			url : "",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					var f = data.data;
+					var o = f.folderInfo;
+					$("#title").text(f.name);
+					if (o == null) {
+						$("#current-location").append("当前位置：<a href='/user/user/file/info/'>根目录</a> / <a href=''>" + f.name + "</a>");
+					} else {
+						$("#current-location").append("当前位置：<a href='/user/user/file/info/'>根目录</a> / <a href='/user/folder/file/info/" + o.timestamp + "'>" + o.name + "</a> / <a href=''>" + f.name + "</a>");
+					}
+					$("#name").attr("fileid", f.id);
+					$("#name").attr("name", f.name);
+					$("#name").attr("timestamp", f.timestamp);
+					$("#name").val(f.name);
+					$("#description").val(f.description);
+					$("#time").text(time2Date(f.time));
+					$("#md5").text(f.md5);
+					$("#browsing").text(f.browsing + "次");
+					$("#download").text(f.download + "次");
+					$("#length").text(bytes2Size(f.length));
+					$("#isshare").prop("checked", f.isshare == 1);
+					$("#pwd").prop("checked", f.pwd != "");
+					$("#pwdText").text(f.pwd);
+					$("#issearch").prop("checked", f.issearch == 1);
+					$("#islimit").prop("checked", f.islimit == 1);
+					if (f.isshare == 0) {
+						$(".hide1").hide();
+					}
+					if (f.pwd == "") {
+						$("#pwdText").hide();
+					}
+					var pwd = f.pwd;
+					var link = window.location.protocol + "//" + window.location.host + "/z/" + f.timestamp;
+					if (pwd != "") {
+						link += " 密码：" + pwd;
+					}
+					$("#link").append("<a href='/file/download/" + f.uuid + "' target='_blank'>下载</a>");
+					$("#linkText").text(link);
+					$("#copyLinkBtn").click(function() {
+						copyLink("#copyLinkBtn", "分享文件【" + f.name + "】下载地址: " + link);
+					});
+				} else {
+					$("#title").text("文件不存在");
+				}
+			}
+		});
+		$("#isshare").click(function() {
+			if ($(this).is(":checked")) {
+				$(".hide1").show();
+			} else {
+				$(".hide1").hide();
+			}
+		});
+		$("#pwd").click(function() {
+			var pwd;
+			var name = $("#name").attr("name");
+			var timestamp = $("#name").attr("timestamp");
+			var url = window.location.protocol + "//" + window.location.host + "/z/" + timestamp;
+			if ($(this).is(":checked")) {
+				$("#pwdText").show();
+				pwd = randomFilePwd();
+			} else {
+				$("#pwdText").hide();
+			}
+			if (pwd != undefined) {
+				link = url + " 密码：" + pwd;
+			} else {
+				link = url;
+			}
+			$("#pwdText").text(pwd);
+			$("#linkText").text(link);
+			$("#copyLinkBtn").unbind("click");
+			$("#copyLinkBtn").click(function() {
+				copyLink("#copyLinkBtn", "分享文件【" + name + "】下载地址: " + link);
+			});
+		});
+	});
+	function edit() {
+		var id = $("#name").attr("fileid");
+		var name = $("#name").val();
+		var description = $("#description").val();
+		var isshare = $("#isshare").is(":checked") ? 1 : 0;
+		var issearch = $("#issearch").is(":checked") ? 1 : 0;
+		var islimit = $("#islimit").is(":checked") ? 1 : 0;
+		var pwd = $("#pwd").is(":checked") ? $("#pwdText").text() : "";
+		if (name.length == 0) {
+			showTips("name", "文件名不可为空！");
+			return false;
+		}
+		$.ajax({
+			url : "/user/file/edit",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				name : name,
+				description : description,
+				isshare : isshare,
+				issearch : issearch,
+				islimit : islimit,
+				pwd : pwd
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					$("#title").text(name);
+					showTips(null, "修改成功！", "success");
+				} else {
+					showTips(null, data.msg);
+				}
+			},
+			error : function(e) {
+				showTips(null, "网络异常，请重试！", "warning");
+			}
+		});
+	}
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title"></div>
+		<div id="current-location"></div>
+	</div>
+	<div id="table">
+		<table>
+			<tr class="t1">
+				<td>文件名</td>
+				<td colspan="3">
+					<input type="text" class="form-control" id="name" />
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>文件描述</td>
+				<td colspan="3">
+					<textarea rows="5" class="form-control" id="description"></textarea>
+				</td>
+			</tr>
+			<tr class="t2">
+				<td>文件上传时间</td>
+				<td colspan="3" id="time"></td>
+			</tr>
+			<tr class="t2">
+				<td>文件MD5</td>
+				<td colspan="3" id="md5"></td>
+			</tr>
+			<tr class="t3">
+				<td>文件浏览次数</td>
+				<td id="browsing"></td>
+				<td>文件下载次数</td>
+				<td id="download"></td>
+			</tr>
+			<tr class="t3">
+				<td>文件大小</td>
+				<td id="length"></td>
+				<td>文件下载地址</td>
+				<td id="link"></td>
+			</tr>
+			<tr class="t3">
+				<td>分享</td>
+				<td>
+					<input type="checkbox" class="switch" id="isshare" />
+				</td>
+				<td class="hide1">密码</td>
+				<td class="hide1">
+					<input type="checkbox" class="switch" id="pwd" />&ensp;<label id="pwdText"></label>
+				</td>
+			</tr>
+			<tr class="t3 hide1">
+				<td>可搜索到</td>
+				<td>
+					<input type="checkbox" class="switch" id="issearch" />
+				</td>
+				<td>需要登录</td>
+				<td>
+					<input type="checkbox" class="switch" id="islimit" />
+				</td>
+			</tr>
+			<tr class="t1">
+				<td>分享</td>
+				<td colspan="3">
+					<label class="form-control" id="linkText"></label>
+				</td>
+				<td>
+					<button class="btn btn-info" id="copyLinkBtn">复制</button>
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>
+					<button class="btn btn-success" onClick="edit()">编辑</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

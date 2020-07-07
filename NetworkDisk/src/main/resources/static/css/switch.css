@@ -1,0 +1,45 @@
+input[type="checkbox"].switch {
+	outline: none;
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	position: relative;
+	margin: 2px;
+	width: 40px;
+	height: 20px;
+	background: #ccc;
+	border-radius: 10px;
+	transition: background-color .3s;
+}
+
+input[type="checkbox"].switch::after {
+	content: "";
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background: #fff;
+	transition: .4s;
+	top: 2px;
+	position: absolute;
+	left: 2px;
+}
+
+input[type="checkbox"].switch:checked {
+	background: #1c6;
+}
+
+input[type="checkbox"].switch:checked::after {
+	content: "";
+	position: absolute;
+	left: 22px;
+	top: 2px;
+}
+
+input[type="checkbox"].switch:disabled {
+	background: #ddd;
+}
+
+input[type="checkbox"].switch:checked:disabled {
+	background: #ada;
+}

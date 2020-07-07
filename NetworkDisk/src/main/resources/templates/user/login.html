@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/qq-vector.js"></script>
+<script type="text/javascript" src="/js/md5.js"></script>
+<style type="text/css">
+html, body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	width: 100%;
+}
+
+#div {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+
+#bg {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	z-index: -1;
+}
+
+#text {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#img {
+	width: 64px;
+	height: 64px;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#msg {
+	color: red;
+}
+
+#account, #pwd, #loginBtn {
+	text-align: center;
+	font-size: 1.5em;
+	width: 15em;
+	height: 2em;
+	margin-bottom: 0.2em;
+	border-radius: 0.5em;
+}
+
+#account, #pwd {
+	color: #fff;
+	background-color: rgba(255, 255, 255, 0.2);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+#loginBtn {
+	font-weight: bold;
+}
+</style>
+<script type="text/javascript">
+	/* 自动加载 设置背景 设置enter键监听登录 */
+	$(function() {
+		QQVector("body", "bg");
+		$("#account").focus();
+		$(document).keydown(function(event) {
+			if (event.keyCode == 13) {
+				login();
+			}
+		});
+	});
+	/* 显示提示信息 */
+	function showTips(name, msg) {
+		$("#msg").text(msg);
+		$("input").css("background", "rgba(255, 255, 255, 0.2)");
+		$("#" + name).css("background", "#faa");
+		$("#" + name).focus();
+	}
+	/* 登录 */
+	function login() {
+		var regLoginAccount = /^[0-9a-zA-Z]{3,18}$/;
+		var regPwd = /^.{8,16}$/;
+		var account = $("#account").val();
+		var pwd = $("#pwd").val();
+		if (!regLoginAccount.test(account)) {
+			showTips("account", "用户名格式错误！");
+			return false;
+		}
+		if (!regPwd.test(pwd)) {
+			showTips("pwd", "密码格式错误！");
+			return false;
+		}
+		pwd = hex_md5(pwd);
+		$("#loginBtn").text("正在登录...");
+		$.ajax({
+			url : "/user/login",
+			type : "post",
+			data : JSON.stringify({
+				account : account,
+				pwd : pwd,
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					window.location.href = "/";
+				} else {
+					$("#loginBtn").text("登录");
+					showTips("pwd", data.msg);
+				}
+			},
+			error : function(e) {
+				$("#loginBtn").text("登录");
+				showTips(null, "网络异常，请重试！");
+			}
+		});
+	}
+</script>
+</head>
+<body id="body">
+	<div id="bg"></div>
+	<div id="div">
+		<a href="/"><img id="img" src="/img/logo.png" alt="Z盘" /></a>
+		<div id="title">登录账号</div>
+		<div id="msg">&emsp;</div>
+		<input type="text" placeholder="用户名/学号/工号/身份证号码" class="form-control" id="account"> <input type="password" placeholder="密码" class="form-control" id="pwd">
+		<button type="button" onClick="login()" class="btn btn-default" id="loginBtn">登录</button>
+		<div id="text">
+			<a href="/user/register">注册账号</a>&emsp;&emsp;&emsp;&emsp;<a href="/user/find">找回密码</a>
+		</div>
+	</div>
+</body>
+</html>

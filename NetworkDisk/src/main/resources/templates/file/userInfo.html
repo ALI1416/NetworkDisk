@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#table td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#table td:nth-child(1) {
+	text-align: right;
+	width: 5em;
+}
+
+#table td:nth-child(2) {
+	width: 20em;
+}
+
+#userDescription {
+	height: 8em;
+}
+</style>
+<script>
+	/* 自动加载 */
+	$(function() {
+		$.ajax({
+			url : "",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					var d = data.data;
+					$("#title").text(d.name + "的个人信息");
+					$("#current-location").append("当前位置：<a href=''>" + d.name + "</a>");
+					$("#userName").text(d.name);
+					$("#userGender").text(d.gender == 1 ? "男" : "女");
+					var now = new Date();
+					var now_year = now.getFullYear();
+					$("#userYear").text(now_year - d.year + "岁");
+					$("#userDescription").text(d.description);
+					$("#userFile").append("<a href='/file/user/file/info/" + d.id + "'>点击进入</a>");
+					var link = window.location.protocol + "//" + window.location.host + "/u/" + d.id;
+					$("#linkText").text(link);
+					$("#copyLinkBtn").click(function() {
+						copyLink("#copyLinkBtn", "分享用户【" + d.name + "】链接地址: " + link)
+					});
+				} else {
+					$("#title").text("用户不存在");
+				}
+			}
+		});
+	});
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title"></div>
+		<div id="current-location"></div>
+	</div>
+	<div id="table">
+		<table>
+			<tr>
+				<td>昵称</td>
+				<td>
+					<label class="form-control" id="userName"></label>
+				</td>
+			</tr>
+			<tr>
+				<td>性别</td>
+				<td>
+					<label class="form-control" id="userGender"></label>
+				</td>
+			</tr>
+			<tr>
+				<td>年龄</td>
+				<td>
+					<label class="form-control" id="userYear"></label>
+				</td>
+			</tr>
+			<tr>
+				<td>个人简介</td>
+				<td>
+					<label class="form-control" id="userDescription"></label>
+				</td>
+			</tr>
+			<tr>
+				<td>用户文件</td>
+				<td>
+					<label class="form-control" id="userFile"></label>
+				</td>
+			</tr>
+			<tr>
+				<td>分享</td>
+				<td>
+					<label class="form-control" id="linkText"></label>
+				</td>
+				<td>
+					<button class="btn btn-info" id="copyLinkBtn">复制</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
