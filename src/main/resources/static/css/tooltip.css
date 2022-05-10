@@ -1,0 +1,94 @@
+/* 普通提示框 */
+.tooltip {
+	padding: 5px;
+	font-size: 11px;
+	opacity: 0.85;
+	background-repeat: no-repeat;
+	background-image: url(data:image/gif;base64,R0lGODlhCQAJAIABAAAAAAAAACH5BAEAAAEALAAAAAAJAAkAAAIRjAOnwIrcDJxvwkplPtchVQAAOw==);
+}
+
+.tooltip-inner {
+	padding: 5px 10px;
+	max-width: 200px;
+	pointer-events: none;
+	color: white;
+	text-align: center;
+	background-color: black;
+	border-radius: 3px;
+	box-shadow: 0 0 3px rgba(0, 0, 0, 0.25);
+}
+
+.tooltip-bottom {
+	background-position: top center;
+}
+
+.tooltip-top {
+	background-position: bottom center;
+}
+
+.tooltip-left {
+	background-position: right center;
+}
+
+.tooltip-right {
+	background-position: left center;
+}
+
+/* 定位提示框+遮罩提示框 */
+#tipsDiv, #shadeDiv {
+	font-size: 14px;
+	display: inline-block;
+	padding: 10px 15px 5px 5px;
+	min-width: 20px;
+	min-height: 14px;
+	position: absolute;
+	z-index: 999;
+	background: rgba(192, 192, 192, 0.8);
+	border-radius: 5px;
+}
+
+#shadeDiv {
+	z-index: 1001;
+}
+
+#tipsDiv::after {
+	content: "";
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	border-width: 8px;
+	border-style: solid;
+	border-color: transparent transparent rgba(192, 192, 192, 0.8);
+}
+
+#tipsClose, #shadeClose {
+	position: absolute;
+	top: -4px;
+	right: 0px;
+	background-color: rgba(255, 255, 255, 0);
+	color: #fff;
+	font-size: 20px;
+	border: none;
+	outline: none;
+	padding: 0;
+	width: 16px;
+	height: 16px;
+}
+
+#tipsClose:hover, #shadeClose:hover {
+	color: #eee;
+}
+
+#shadeBg {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.4);
+	z-index: 1000;
+	top: 0;
+	left: 0;
+}
+
+#shadeSpan {
+	color: #fff;
+}

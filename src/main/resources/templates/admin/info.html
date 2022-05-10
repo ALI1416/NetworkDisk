@@ -1,0 +1,811 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/switch.css" />
+<link type="text/css" rel="stylesheet" href="/css/ico.css" />
+<link type="text/css" rel="stylesheet" href="/css/tooltip.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/clipboard.min.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<script type="text/javascript" src="/js/tooltip.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+.t1 {
+	text-align: right;
+	width: 6em;
+}
+
+.t2 {
+	width: 14em;
+}
+
+.t3 {
+	width: 6em;
+}
+
+.tTitle {
+	font-size: 1.5em;
+	color: red;
+	text-align: center;
+}
+
+#realname, #user, #file {
+	display: inline-block;
+}
+
+#historyBrowsingDiv, #historyDownloadDiv {
+	float: left;
+	margin: 0 1em;
+}
+
+#realname td, #user td, #file td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#uDescription, #fDescription {
+	height: 6em;
+}
+
+#uType {
+	padding: 0;
+}
+
+#filesDiv {
+	clear: left;
+	/* 	width:100%; */
+}
+
+#files {
+	max-height: 40em;
+	overflow-y: auto;
+}
+
+#historyBrowsing, #historyDownload {
+	max-height: 20em;
+	overflow-y: auto;
+}
+
+#files td {
+	vertical-align: middle;
+}
+
+#files input[type="text"] {
+	background-color: rgba(255, 255, 255, 0);
+	border: solid #c1c1c1 1px;
+	width: 100%;
+}
+
+.visi {
+	visibility: hidden;
+}
+
+tr:hover .visi {
+	visibility: visible;
+}
+</style>
+<script>
+	$(function() {
+		$("#uSizeone,#uSizeall,#uSizecurrent").tooltip({
+			fallback : "单位：MB。",
+			html : true
+		});
+		$.ajax({
+			url : "",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var r = d.userInfo;
+				var f = d.file;
+				var fs = d.files;
+				var hb = d.historyBrowsing;
+				var hd = d.historyDownload;
+				{ /* 实名认证信息 */
+					$("#rId").text(r.id);
+					$("#rName").val(r.name);
+					$("#rNumber").val(r.number);
+					$("#rIdcard").val(r.idcard);
+					$("#rType").val(r.type);
+				}
+				{ /* 用户信息 */
+					if (d.id == null) {
+						return false;
+					}
+					$("#uId").text(d.id);
+					$("#uAccount").val(d.account);
+					$("#uName").val(d.name);
+					$("#uDescription").val(d.description);
+					$("#uGender").attr("checked", d.gender == 1 ? true : false);
+					$("#uYear").val(d.year);
+					$("#uSizeone").val(d.sizeone);
+					$("#uSizeall").val(d.sizeall);
+					$("#uSizecurrent").val(d.sizecurrent);
+					$("#uType").val(d.type);
+					$("#uTime").text(time2Date(d.time));
+					var uLink = window.location.protocol + "//" + window.location.host + "/u/" + d.id;
+					$("#uLinkText").text(uLink);
+					$("#uCopyLinkBtn").click(function() {
+						copyLink("#uCopyLinkBtn", "分享用户【" + d.name + "】链接地址: " + uLink)
+					});
+				}
+				{ /* 文件列表 */
+					var list = fs;
+					var tr,
+						id,
+						name,
+						suffix,
+						timestamp,
+						size,
+						uuid,
+						description,
+						isfolder,
+						isdelete,
+						isshare,
+						pwd,
+						islimit,
+						issearch,
+						download,
+						browsing,
+						date,
+						downloadLink;
+					for (var i in list) {
+						id = list[i].id;
+						userid = list[i].userid;
+						name = list[i].name;
+						isfolder = list[i].isfolder;
+						suffix = (isfolder == 1) ? "folder" : getFileSuffix(name);
+						timestamp = list[i].timestamp;
+						size = (isfolder == 1) ? "" : bytes2Size(list[i].length);
+						uuid = list[i].uuid;
+						description = list[i].description;
+						isdelete = (list[i].isdelete == 1) ? "checked" : "";
+						isshare = (list[i].isshare == 1) ? "checked" : "";
+						pwd = list[i].pwd;
+						islimit = (list[i].islimit == 1) ? "checked" : "";
+						issearch = (list[i].issearch == 1) ? "checked" : "";
+						download = list[i].download;
+						browsing = list[i].browsing;
+						date = time2Date(list[i].time);
+						downloadLink = (isfolder == 1) ? ("<a class='visi' href='/admin/folder/" + id + "' target='_blank'>进入</a>")
+							: ("<a class='visi' href='/file/download/" + uuid + "' target='_blank'>下载</a>")
+						tr = "<tr fileid='" + id + "' userid='" + userid + "' isfolder='" + isfolder + "' timestamp='" + timestamp + "' name='" + name + "' pwd='" + pwd + "' uuid='" + uuid + "'>"
+							+ "<td><input type='checkbox' value='" + id + "' name='idcb' /></td>"
+							+ "<td><img class='ico ico-" + suffix + "'></td>"
+							+ "<td><input type='text' value='" + name + "' /></td>"
+							+ "<td><button class='btn btn-primary btn-xs visi' onClick='shareFile()'>分享</button></td>"
+							+ "<td>" + size + "</td>"
+							+ "<td>" + downloadLink + "</td>"
+							+ "<td><input type='text' id='description" + id + "' value='" + description + "' /></td>"
+							+ "<td><input type='checkbox' class='switch' id='isdelete" + id + "' " + isdelete + " /></td>"
+							+ "<td><input type='checkbox' class='switch' id='issearch" + id + "' " + issearch + " /></td>"
+							+ "<td><input type='text' id='pwd" + id + "' value='" + pwd + "' /></td>"
+							+ "<td><input type='checkbox' class='switch' id='islimit" + id + "' " + islimit + " /></td>"
+							+ "<td><input type='checkbox' class='switch' id='isshare" + id + "' " + isshare + " /></td>"
+							+ "<td><input type='text' id='download" + id + "' value='" + download + "' /></td>"
+							+ "<td><input type='text' id='browsing" + id + "' value='" + browsing + "' /></td>"
+							+ "<td>" + date + "</td>"
+							+ "<td><button class='btn btn-success btn-xs visi' onClick='updateInfo()'>查询</button></td>"
+							+ "<td><button class='btn btn-warning btn-xs visi' onClick='changeInfo()'>改</button></td></tr>";
+						$("#fileList").append(tr);
+					}
+				}
+				loadMoreInfo(f, hb, hd);
+			}
+		});
+	});
+	function loadMoreInfo(f, hb, hd) {
+		{ /* 文件信息 */
+			$("#fId").text(f.id);
+			$("#fName").val(f.name);
+			$("#fDescription").val(f.description);
+			$("#fTime").text(time2Date(f.time));
+			$("#fMd5").text(f.md5);
+			$("#fUuid").text(f.uuid);
+			$("#fTimestamp").text(f.timestamp);
+			$("#fPath").text(f.path);
+			$("#fBrowsing").text(f.browsing);
+			$("#fDownload").text(f.download);
+			$("#fSize").text(bytes2Size(f.length));
+			$("#fLink").empty();
+			$("#fLink").append("<a href='/file/download/" + f.uuid + "' target='_blank'>下载</a>");
+			$("#fIsdelete").attr("checked", f.isdelete == 1 ? true : false);
+			$("#fIssubfile").attr("checked", f.issubfile == 1 ? true : false);
+			$("#fIsshare").attr("checked", f.isshare == 1 ? true : false);
+			$("#fIssearch").attr("checked", f.issearch == 1 ? true : false);
+			$("#fIslimit").attr("checked", f.islimit == 1 ? true : false);
+			$("#fPwd").val(f.pwd);
+			var fLink = window.location.protocol + "//" + window.location.host + "/z/" + f.timestamp;
+			if (f.pwd.length != 0) {
+				fLink += " 密码：" + f.pwd;
+			}
+			$("#fLinkText").text(fLink);
+			$("#fCopyLinkBtn").click(function() {
+				copyLink("#fCopyLinkBtn", "分享用户【" + f.name + "】链接地址: " + fLink)
+			});
+		}
+		{ /* 浏览记录 */
+			$("#historyBrowsingList").empty();
+			var list = hb;
+			var tr,
+				id,
+				userid,
+				ip,
+				time;
+			for (var i in list) {
+				id = list[i].id;
+				userid = list[i].userid;
+				ip = long2Ip(list[i].ip);
+				time = time2Date(list[i].time);
+				tr = "<tr historyBrowsingid='" + id + "' userid='" + userid + "'>"
+					+ "<td>" + userid + "</td>"
+					+ "<td><button class='btn btn-success btn-xs visi' onClick='userInfo()'>查</button></td>"
+					+ "<td>" + ip + "</td>"
+					+ "<td id='ipb" + id + "'></td>"
+					+ "<td>" + time + "</td>"
+					+ "</tr>";
+				$("#historyBrowsingList").append(tr);
+				ip2Addr("ipb" + id, ip);
+			}
+		}
+		{ /* 下载记录 */
+			$("#historyDownloadList").empty();
+			var list = hd;
+			var tr,
+				id,
+				userid,
+				ip,
+				time;
+			for (var i in list) {
+				id = list[i].id;
+				userid = list[i].userid;
+				ip = long2Ip(list[i].ip);
+				time = time2Date(list[i].time);
+				tr = "<tr historyDownloadid='" + id + "' userid='" + userid + "'>"
+					+ "<td>" + userid + "</td>"
+					+ "<td><button class='btn btn-success btn-xs visi' onClick='userInfo()'>查</button></td>"
+					+ "<td>" + ip + "</td>"
+					+ "<td id='ipd" + id + "'></td>"
+					+ "<td>" + time + "</td>"
+					+ "</tr>";
+				$("#historyDownloadList").append(tr);
+				ip2Addr("ipd" + id, ip);
+			}
+		}
+
+	}
+	function userInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var userid = tr.attr("userid");
+		$.ajax({
+			url : "/admin/user/" + userid,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var u = d.userInfo;
+				var account = d.account;
+				var name = d.name;
+				var gender = d.gender == 1 ? "男" : "女";
+				var year = d.year;
+				var type = userType2Str(d.type);
+				var description = d.description;
+				var sizeall = d.sizeall;
+				var sizeone = d.sizeone;
+				var sizecurrent = d.sizecurrent;
+				var time = time2Date(d.time);
+				var userinfoid = u.id;
+				var type2 = userType2Str(u.type);
+				var name2 = u.name;
+				var number = u.number;
+				var idcard = u.idcard;
+				var h = "<table>"
+					+ "<tr><td class='tRight'>用户ID</td><td>" + userid + "</td></tr>"
+					+ "<tr><td class='tRight'>用户类型</td><td>" + type + "</td></tr>"
+					+ "<tr><td class='tRight'>账号</td><td>" + account + "</td></tr>"
+					+ "<tr><td class='tRight'>昵称</td><td>" + name + "</td></tr>"
+					+ "<tr><td class='tRight'>性别</td><td>" + gender + "</td></tr>"
+					+ "<tr><td class='tRight'>出生年</td><td>" + year + "</td></tr>"
+					+ "<tr><td class='tRight'>描述</td><td style='max-width:20em;'>" + description + "</td></tr>"
+					+ "<tr><td class='tRight'>总容量</td><td>" + sizeall + "MB</td></tr>"
+					+ "<tr><td class='tRight'>单文件容量</td><td>" + sizeone + "MB</td></tr>"
+					+ "<tr><td class='tRight'>已使用容量</td><td>" + sizecurrent + "MB</td></tr>"
+					+ "<tr><td class='tRight'>注册时间</td><td>" + time + "</td></tr>"
+					+ "<tr><td class='tRight'>&emsp;</td></tr>"
+					+ "<tr><td class='tRight'>实名ID</td><td>" + userinfoid + "</td></tr>"
+					+ "<tr><td class='tRight'>实名类型</td><td>" + type2 + "</td></tr>"
+					+ "<tr><td class='tRight'>真实姓名</td><td>" + name2 + "</td></tr>"
+					+ "<tr><td class='tRight'>学号</td><td>" + number + "</td></tr>"
+					+ "<tr><td class='tRight'>身份证号码</td><td>" + idcard + "</td></tr>"
+					+ "<tr><td class='tRight'>&emsp;</td></tr>"
+					+ "<tr><td class='tRight'>用户信息</td><td><a href='/admin/user/info/" + userid + "'>查询</a></td></tr>"
+					+ "<tr><td class='tRight'>用户实名信息</td><td><a href='/admin/userinfo/info/" + u.id + "'>查询</a></td></tr>"
+					+ "<tr><td class='tRight'>用户所有文件</td><td><a href='/admin/file/user/" + userid + "'>查询</a></td></tr>"
+				tips(t, h);
+			}
+		});
+	}
+	function updateInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var id = tr.attr("fileid");
+		$.ajax({
+			url : "/admin/info/f/" + id,
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var d = data.data;
+				var f = d.file;
+				var hb = d.historyBrowsing;
+				var hd = d.historyDownload;
+				console.log(data);
+				loadMoreInfo(f, hb, hd);
+			}
+		});
+	}
+	function rEdit() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var id = $("#rId").text();
+		var name = $("#rName").val();
+		var number = $("#rNumber").val();
+		var idcard = $("#rIdcard").val();
+		var type = $("#rType").val();
+		$.ajax({
+			url : "/admin/edit/realname",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				name : name,
+				number : number,
+				idcard : idcard,
+				type : type
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				tips(t, "修改成功");
+			}
+		});
+	}
+	function uEdit() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var id = $("#uId").text();
+		var account = $("#uAccount").val();
+		var name = $("#uName").val();
+		var description = $("#uDescription").val();
+		var year = $("#uYear").val();
+		var sizeone = $("#uSizeone").val();
+		var sizeall = $("#uSizeall").val();
+		var sizecurrent = $("#uSizecurrent").val();
+		var type = $("#uType").val();
+		var gender = $("#uGender").is(":checked") ? "1" : "0";
+		$.ajax({
+			url : "/admin/edit/user",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				account : account,
+				name : name,
+				description : description,
+				year : year,
+				sizeone : sizeone,
+				sizeall : sizeall,
+				sizecurrent : sizecurrent,
+				type : type,
+				gender : gender
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				tips(t, "修改成功");
+			}
+		});
+	}
+	function fEdit() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var id = $("#fId").text();
+		var name = $("#fName").val();
+		var description = $("#fDescription").val();
+		var pwd = $("#fPwd").val();
+		var isdelete = $("#fIsdelete").is(":checked") ? "1" : "0";
+		var isshare = $("#fIsshare").is(":checked") ? "1" : "0";
+		var issearch = $("#fIssearch").is(":checked") ? "1" : "0";
+		var islimit = $("#fIslimit").is(":checked") ? "1" : "0";
+		$.ajax({
+			url : "/admin/edit/file",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				name : name,
+				description : description,
+				pwd : pwd,
+				isdelete : isdelete,
+				isshare : isshare,
+				issearch : issearch,
+				islimit : islimit
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				tips(t, "修改成功");
+			}
+		});
+	}
+	function changeInfo() {
+		var e = window.event;
+		var t = $(e.target || e.srcElement);
+		if (tipsTest(t) == true) {
+			tips();
+			return false;
+		}
+		var tr = t.parent().parent();
+		var id = tr.attr("fileid");
+		var name = $("#name" + id).val();
+		var description = $("#description" + id).val();
+		var pwd = $("#pwd" + id).val();
+		var download = $("#download" + id).val();
+		var browsing = $("#browsing" + id).val();
+		var isdelete = $("#isdelete" + id).is(":checked") ? "1" : "0";
+		var issearch = $("#issearch" + id).is(":checked") ? "1" : "0";
+		var islimit = $("#islimit" + id).is(":checked") ? "1" : "0";
+		var isshare = $("#isshare" + id).is(":checked") ? "1" : "0";
+		$.ajax({
+			url : "/admin/edit/file",
+			type : "post",
+			data : JSON.stringify({
+				id : id,
+				name : name,
+				description : description,
+				pwd : pwd,
+				download : download,
+				browsing : browsing,
+				isdelete : isdelete,
+				issearch : issearch,
+				islimit : islimit,
+				isshare : isshare
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				tips(t, "修改成功");
+			}
+		});
+	}
+</script>
+</head>
+<body>
+	<div>
+		<div id="realname">
+			<div class="tTitle">实名认证信息</div>
+			<table>
+				<tr>
+					<td class="t1">实名ID</td>
+					<td class="t2" id="rId"></td>
+				</tr>
+				<tr>
+					<td class="t1">姓名</td>
+					<td class="t2">
+						<input type="text" class="form-control" id="rName">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">学号</td>
+					<td class="t2">
+						<input type="text" class="form-control" id="rNumber">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">身份证号码</td>
+					<td class="t2">
+						<input type="text" class="form-control" id="rIdcard">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">用户类型</td>
+					<td class="t2">
+						<select class="form-control" id="rType">
+							<option value="0">已删除</option>
+							<option value="1">根用户</option>
+							<option value="2">管理员</option>
+							<option value="3">教师</option>
+							<option value="4">学生</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td class="t1"></td>
+					<td class="t2">
+						<button class="btn btn-success" onClick="rEdit()">编辑</button>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div id="user">
+			<div class="tTitle">用户信息</div>
+			<table>
+				<tr>
+					<td class="t1">用户ID</td>
+					<td colspan="3" id="uId"></td>
+				</tr>
+				<tr>
+					<td class="t1">账号</td>
+					<td colspan="3">
+						<input type="text" class="form-control" id="uAccount">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">昵称</td>
+					<td colspan="3">
+						<input type="text" class="form-control" id="uName">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">描述</td>
+					<td colspan="3">
+						<textarea class="form-control" id="uDescription"></textarea>
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">女/男</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" id="uGender">
+					</td>
+					<td class="t1">出生年</td>
+					<td class="t3">
+						<input type="text" class="form-control" id="uYear">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">单文件容量</td>
+					<td class="t3">
+						<input type="text" class="form-control" id="uSizeone">
+					</td>
+					<td class="t1">用户类型</td>
+					<td class="t3">
+						<select class="form-control" id="uType">
+							<option value="0">已删除</option>
+							<option value="1">根用户</option>
+							<option value="2">管理员</option>
+							<option value="3">教师</option>
+							<option value="4">学生</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">总容量</td>
+					<td class="t3">
+						<input type="text" class="form-control" id="uSizeall">
+					</td>
+					<td class="t1">已使用容量</td>
+					<td class="t3">
+						<input type="text" class="form-control" id="uSizecurrent">
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">注册时间</td>
+					<td colspan="3" id="uTime"></td>
+				</tr>
+				<tr>
+					<td class="t1">分享</td>
+					<td colspan="3">
+						<label class="form-control" id="uLinkText"></label>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="btn btn-success" onClick="uEdit()">编辑</button>
+					</td>
+					<td></td>
+					<td class="t1">
+						<button class="btn btn-info" id="uCopyLinkBtn">复制</button>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div id="file">
+			<div class="tTitle">文件信息</div>
+			<table>
+				<tr>
+					<td class="t1">文件ID</td>
+					<td colspan="4" id="fId"></td>
+				</tr>
+				<tr>
+					<td class="t1">文件名</td>
+					<td colspan="4">
+						<input type="text" class="form-control" id="fName" />
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">文件描述</td>
+					<td colspan="4">
+						<textarea class="form-control" id="fDescription"></textarea>
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">上传时间</td>
+					<td colspan="4" id="fTime"></td>
+				</tr>
+				<tr>
+					<td class="t1">文件MD5</td>
+					<td colspan="4" id="fMd5"></td>
+				</tr>
+				<tr>
+					<td class="t1">文件UUID</td>
+					<td colspan="4" id="fUuid"></td>
+				</tr>
+				<tr>
+					<td class="t1">时间戳</td>
+					<td class="t3" id="fTimestamp"></td>
+					<td class="t1"></td>
+					<td class="t1">保存路径</td>
+					<td class="t3" id="fPath"></td>
+				</tr>
+				<tr>
+					<td class="t1">浏览次数</td>
+					<td class="t3" id="fBrowsing"></td>
+					<td class="t1"></td>
+					<td class="t1">下载次数</td>
+					<td class="t3" id="fDownload"></td>
+				</tr>
+				<tr>
+					<td class="t1">文件大小</td>
+					<td class="t3" id="fSize"></td>
+					<td class="t1"></td>
+					<td class="t1">下载地址</td>
+					<td class="t3" id="fLink"></td>
+				</tr>
+				<tr>
+					<td class="t1">已删除</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" id="fIsdelete" />
+					</td>
+					<td class="t1"></td>
+					<td class="t1">子文件</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" disabled id="fIssubfile" />
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">分享</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" id="fIsshare" />
+					</td>
+					<td class="t1"></td>
+					<td class="t1">密码</td>
+					<td class="t3">
+						<input type="text" class="form-control" id="fPwd" />
+					</td>
+				</tr>
+				<tr>
+					<td class="t1">可搜索到</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" id="fIssearch" />
+					</td>
+					<td class="t1"></td>
+					<td class="t1">需要登录</td>
+					<td class="t3">
+						<input type="checkbox" class="switch" id="fIslimit" />
+					</td>
+					<td class="t1"></td>
+				</tr>
+				<tr>
+					<td class="t1">分享</td>
+					<td colspan="4">
+						<label class="form-control" id="fLinkText"></label>
+					</td>
+				</tr>
+				<tr>
+					<td></td>
+					<td>
+						<button class="btn btn-success" onClick="fEdit()">编辑</button>
+					</td>
+					<td></td>
+					<td></td>
+					<td class="t1">
+						<button class="btn btn-info" id="fCopyLinkBtn">复制</button>
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<div>
+		<div id="historyBrowsingDiv">
+			<div class="tTitle">浏览记录</div>
+			<div id="historyBrowsing">
+				<table class="table table-hover table-striped table-condensed table-bordered">
+					<thead>
+						<tr>
+							<th style="width: 4em;">用户ID</th>
+							<th style="width: 2em;"></th>
+							<th style="width: 8em;">IP地址</th>
+							<th style="width: 12em;">地理位置</th>
+							<th style="width: 11em;">浏览时间</th>
+						</tr>
+					</thead>
+					<tbody id="historyBrowsingList"></tbody>
+				</table>
+			</div>
+		</div>
+		<div id="historyDownloadDiv">
+			<div class="tTitle">下载记录</div>
+			<div id="historyDownload">
+				<table class="table table-hover table-striped table-condensed table-bordered">
+					<thead>
+						<tr>
+							<th style="width: 4em;">用户ID</th>
+							<th style="width: 2em;"></th>
+							<th style="width: 8em;">IP地址</th>
+							<th style="width: 12em;">地理位置</th>
+							<th style="width: 11em;">下载时间</th>
+						</tr>
+					</thead>
+					<tbody id="historyDownloadList"></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div id="filesDiv">
+		<div class="tTitle">文件列表</div>
+		<div id="files">
+			<table class="table table-hover table-striped table-condensed table-bordered">
+				<thead>
+					<tr>
+						<th style="width: 2em;">
+							<input type="checkbox" id="selectAll">
+						</th>
+						<th style="width: 2em;"></th>
+						<th>文件名</th>
+						<th style="width: 2em;"></th>
+						<th style="width: 4em;">大小</th>
+						<th style="width: 3em;"></th>
+						<th style="width: 6em;">描述</th>
+						<th style="width: 4em;">已删除</th>
+						<th style="width: 4em;">已分享</th>
+						<th style="width: 4em;">密码</th>
+						<th style="width: 4em;">需登录</th>
+						<th style="width: 4em;">可搜索</th>
+						<th style="width: 4em;">下载量</th>
+						<th style="width: 4em;">浏览量</th>
+						<th style="width: 11em;">上传时间</th>
+						<th style="width: 2em;"></th>
+						<th style="width: 2em;"></th>
+					</tr>
+				</thead>
+				<tbody id="fileList"></tbody>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

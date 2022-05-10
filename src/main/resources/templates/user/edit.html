@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link type="text/css" rel="stylesheet" href="/css/bootstrap.min.css" />
+<link type="text/css" rel="stylesheet" href="/css/switch.css" />
+<script type="text/javascript" src="/js/jquery.min.js"></script>
+<script type="text/javascript" src="/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="/js/util.js"></script>
+<title>Z盘</title>
+<style type="text/css">
+body {
+	margin: 0.5em;
+}
+
+#title {
+	font-size: 2em;
+}
+
+#table td {
+	padding: 0.5em 0 0 0.5em;
+}
+
+#table td:nth-child(1) {
+	text-align: right;
+}
+
+#table td:nth-child(2) {
+	padding: 0;
+	color: red;
+	font-size: 1.5em;
+}
+
+#refreshLink {
+	font-size: 0.8em;
+}
+
+#userName {
+	width: 10em;
+}
+
+#year {
+	width: 5em;
+}
+
+#description {
+	width: 25em;
+}
+</style>
+<script>
+	/* 自动加载 设置enter键监听编辑 */
+	$(function() {
+		$(document).keydown(function(event) {
+			if (event.keyCode == 13) {
+				edit();
+			}
+		});
+		$.ajax({
+			url : "/user/info",
+			type : "post",
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				var user = data.data;
+				$("#account").text(user.account);
+				$("#userName").val(user.name);
+				$("#gender").prop("checked", user.gender == 1);
+				$("#year").val(user.year);
+				$("#description").val(user.description);
+				$("#sizeone").text(user.sizeone + "MB");
+				$("#sizeall").text(user.sizeall + "MB");
+				$("#sizecurrent").text((user.sizeall - user.sizecurrent) + "MB");
+				$("#time").text(time2Date(user.time));
+				var userInfo = data.data.userInfo;
+				$("#name").text(userInfo.name);
+				$("#number").text(userInfo.number);
+				$("#idcard").text(userInfo.idcard);
+			}
+		});
+	});
+	/* 显示提示信息 */
+	function showTips(name, msg, color = "danger") {
+		$("#tips").remove();
+		var div = "<div id=\"tips\" class=\"alert alert-dismissable alert-" + color + "\"><button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-hidden=\"true\">×</button><span>" + msg + "</span></div>";
+		$("body").prepend(div);
+		$("#userName").css("background", "#fff");
+		$("#year").css("background", "#fff");
+		$("#description").css("background", "#fff");
+		$("#" + name).css("background", "#faa");
+		$("#" + name).focus();
+	}
+	/* 编辑 */
+	function edit() {
+		var gender = $("#gender").is(":checked") == true ? 1 : 0;
+		var name = $("#userName").val();
+		var year = $("#year").val();
+		var description = $("#description").val();
+		if (name.length == 0) {
+			showTips("userName", "昵称不可为空！");
+			return false;
+		}
+		var now = new Date();
+		var now_year = now.getFullYear();
+		var time = now_year - year;
+		if (time < 0 || time > 200) {
+			showTips("year", "出生年过大或过小！");
+			return false;
+		}
+		$.ajax({
+			url : "/user/edit",
+			type : "post",
+			data : JSON.stringify({
+				name : name,
+				year : year,
+				gender : gender,
+				description : description
+			}),
+			contentType : "application/json;charset=UTF-8",
+			dataType : "json",
+			success : function(data) {
+				if (data.code == 0) {
+					showTips(null, "修改成功！", "success");
+				} else {
+					showTips(null, data.msg);
+				}
+			},
+			error : function(e) {
+				showTips(null, "网络异常，请重试！", "warning");
+			}
+		});
+	}
+</script>
+</head>
+<body>
+	<div id="top">
+		<div id="title">修改个人信息</div>
+	</div>
+	<div id="table">
+		<table>
+			<tr>
+				<td>用户名</td>
+				<td>*</td>
+				<td id="account"></td>
+			</tr>
+			<tr>
+				<td>昵称</td>
+				<td></td>
+				<td>
+					<input type="text" class="form-control" placeholder="请输入昵称" id="userName" />
+				</td>
+			</tr>
+			<tr>
+				<td>女/男</td>
+				<td></td>
+				<td>
+					<input type="checkbox" class="switch" id="gender" />
+				</td>
+			</tr>
+			<tr>
+				<td>出生年</td>
+				<td></td>
+				<td>
+					<input type="text" class="form-control" placeholder="请输入出生年" id="year" />
+				</td>
+			</tr>
+			<tr>
+				<td>个人简介</td>
+				<td></td>
+				<td>
+					<textarea rows="5" class="form-control" placeholder="请输入个人简介" id="description"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td>真实姓名</td>
+				<td>*</td>
+				<td id="name"></td>
+			</tr>
+			<tr>
+				<td>学号/工号</td>
+				<td>*</td>
+				<td id="number"></td>
+			</tr>
+			<tr>
+				<td>身份证号码</td>
+				<td>*</td>
+				<td id="idcard"></td>
+			</tr>
+			<tr>
+				<td>单文件容量</td>
+				<td>*</td>
+				<td id="sizeone"></td>
+			</tr>
+			<tr>
+				<td>总容量</td>
+				<td>*</td>
+				<td id="sizeall"></td>
+			</tr>
+			<tr>
+				<td>剩余容量</td>
+				<td>*</td>
+				<td id="sizecurrent"></td>
+			</tr>
+			<tr>
+				<td>注册时间</td>
+				<td>*</td>
+				<td id="time"></td>
+			</tr>
+			<tr>
+				<td>
+					<a href="/user/edit" id="refreshLink">刷新页面</a>
+				</td>
+				<td></td>
+				<td>
+					<button class="btn btn-success btn-lg" onclick="edit()">修改信息</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
