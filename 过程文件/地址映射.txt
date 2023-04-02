@@ -1,0 +1,50 @@
+/ 网站首页
+已登录跳转到个人页面user/my，否则跳转到登录页面user/login。
+user/login 登录页面
+填写账号信息并登录成功后跳转到个人页面user/my。点击可以跳转到注册页面user/register，找回用户或密码页面user/find。
+user/register 注册页面
+填写个人信息并注册成功后跳转到个人页面user/my。点击可以跳转到登录页面user/login，找回用户或密码页面user/find。
+user/find 找回用户或密码页面。
+填写实名信息并找回成功后跳转到个人页面user/my。点击可以跳转到注册页面user/register，登录页面user/login。
+
+user/my 个人页面。
+进入自动加载个人信息user/info，文件信息user/file/info。点击可以跳转到退出登录user/logout，修改个人信息页面user/edit，修改密码页面user/changPwd。可以编辑文件信息user/file/edit，下载文件user/file/download，上传文件user/file/upload.
+user/logout 退出登录。
+退出成功后跳转到登录页面user/login。
+user/info 个人信息。
+user/edit 编辑个人信息。
+user/changPwd 修改密码。
+user/file/info 文件信息。
+user/file/edit 编辑文件信息。
+user/file/upload 上传文件。
+user/file/download 下载文件。
+user/file/downloadPackage 打包下载文件。
+
+/{} 文件页面。
+进入后自动加载文件信息file/info。点击可以跳转到下载文件file/download，查看用户文件file/user/file。
+file/user/file 用户的文件。
+file/info 文件信息。
+file/download 下载文件。
+file/downloadPackage 打包下载文件。
+file/search 搜索文件。
+
+/admin 管理员页面。
+admin/my 管理员首页。
+admin/changePwd 修改密码。
+admin/userinfo
+admin/userinfo/search 搜索实名信息。
+admin/userinfo/add 新增实名信息。
+admin/userinfo/edit 编辑实名信息。
+admin/user
+admin/user/search 搜索用户。
+admin/user/add 新增用户。
+admin/user/edit 编辑用户。
+admin/user/file/info 查看用户文件。
+admin/user/file/edit 编辑用户文件。
+admin/user/file/download 下载用户文件。
+admin/file 
+admin/file/search 搜索文件。
+admin/file/edit 编辑文件。
+admin/file/upload 上传文件。
+admin/file/download 下载文件。
+admin/file/downloadPackage 打包下载文件。
