@@ -18,7 +18,7 @@ spring:
       max-file-size: 2048MB
       max-request-size: 2048MB
 mybatis:
-  mapper-locations: classpath*:com/ck/dao/*.xml
+  mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.ck.po,com.ck.vo
 logging:
   level:

@@ -49,10 +49,8 @@ public class TipOffServ {
 		try {
 			ok = tipOffDao.find(tipOff);
 		} catch (Exception e) {
-			System.out.println(e);
 			return ok;
 		}
-		System.out.println(ok);
 		return ok;
 	}
 

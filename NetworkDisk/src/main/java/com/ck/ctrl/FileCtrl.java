@@ -70,13 +70,13 @@ public class FileCtrl {
 	/**
 	 * 用户信息
 	 * 
-	 * @param id
+	 * @param userId
 	 * @return
 	 */
 	@PostMapping("/user/info/{userId}")
 	public Result userInfo(@PathVariable Integer userId) {
 		User user = userServer.findById(userId);
-		if (user == null || user.getType() == UserType.DELETE) {
+		if (user == null || user.getType().equals(UserType.DELETE)) {
 			return Result.e(ResultCode.USER_NOT_EXIST);// 用户不存在
 		}
 		/* 用户信息 */
@@ -99,7 +99,7 @@ public class FileCtrl {
 	@PostMapping("/user/file/info/{userId}")
 	public Result userFileInfo(HttpSession session, @PathVariable Integer userId) {
 		User user = userServer.findById(userId);
-		if (user == null || user.getType() == UserType.DELETE) {
+		if (user == null || user.getType().equals(UserType.DELETE)) {
 			return Result.e(ResultCode.USER_NOT_EXIST);// 用户不存在
 		}
 		/* 获取文件信息 */
@@ -164,7 +164,7 @@ public class FileCtrl {
 		}
 		/* 获取用户信息 */
 		User user = userServer.findById(file.getUserid());
-		if (user.getType() == UserType.DELETE) {
+		if (user.getType().equals(UserType.DELETE)) {
 			return Result.e(ResultCode.FILE_NOT_EXIST);// 用户已注销
 		}
 		/* 设置文件信息 */
@@ -210,7 +210,7 @@ public class FileCtrl {
 		}
 		/* 获取用户信息 */
 		User user = userServer.findById(file.getUserid());
-		if (user.getType() == UserType.DELETE) {
+		if (user.getType().equals(UserType.DELETE)) {
 			return Result.e(ResultCode.FILE_NOT_EXIST);// 用户已注销
 		}
 		/* 设置用户信息 */

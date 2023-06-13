@@ -341,7 +341,6 @@ public class UserCtrl {
 	 * 文件信息
 	 * 
 	 * @param session
-	 * @param fileId
 	 * @return
 	 */
 	@PostMapping("/file/info/{timestamp}")
@@ -377,7 +376,6 @@ public class UserCtrl {
 	 * 文件夹里的文件信息
 	 * 
 	 * @param session
-	 * @param folderId
 	 * @return
 	 */
 	@PostMapping("/folder/file/info/{timestamp}")
@@ -527,7 +525,6 @@ public class UserCtrl {
 	 * 批量删除文件
 	 * 
 	 * @param session
-	 * @param fileIds
 	 * @return
 	 */
 	@PostMapping("/file/delete")

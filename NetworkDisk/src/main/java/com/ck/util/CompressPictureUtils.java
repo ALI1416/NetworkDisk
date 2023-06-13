@@ -59,7 +59,7 @@ public class CompressPictureUtils {
 		} catch (Exception e) {
 			try {
 				String msg = e.getMessage();
-				if (msg == "small" || msg == "low") {// 过小或压缩率过低，保存原图
+				if ("small".equals(msg) || "low".equals(msg)) {// 过小或压缩率过低，保存原图
 					File sourceImageFile = new File(sourceImagePath);
 					File destinationImageFile = new File(destinationImagePath);
 					destinationImageFile.delete();

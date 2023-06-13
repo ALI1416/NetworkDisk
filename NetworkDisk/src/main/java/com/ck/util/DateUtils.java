@@ -81,18 +81,14 @@ public class DateUtils {
 	}
 
 	public static void main(String[] args) {
-		Thread test1 = new Thread(new Runnable() {
-			public void run() {
-				for (int i = 0; i < 5; i++) {
-					System.out.println(Thread.currentThread().getName() + " : " + DateUtils.getSyncTimestamp());
-				}
+		Thread test1 = new Thread(() -> {
+			for (int i = 0; i < 5; i++) {
+				System.out.println(Thread.currentThread().getName() + " : " + DateUtils.getSyncTimestamp());
 			}
 		}, "111");
-		Thread test2 = new Thread(new Runnable() {
-			public void run() {
-				for (int i = 0; i < 5; i++) {
-					System.out.println(Thread.currentThread().getName() + " : " + DateUtils.getSyncTimestamp());
-				}
+		Thread test2 = new Thread(() -> {
+			for (int i = 0; i < 5; i++) {
+				System.out.println(Thread.currentThread().getName() + " : " + DateUtils.getSyncTimestamp());
 			}
 		}, "222");
 		test1.start();

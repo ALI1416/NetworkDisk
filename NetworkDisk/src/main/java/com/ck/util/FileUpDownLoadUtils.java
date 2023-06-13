@@ -42,7 +42,7 @@ public class FileUpDownLoadUtils {
 		if (!file.isEmpty()) {
 			String originalFilename = file.getOriginalFilename();
 			String newFilename = "";
-			if (name == null || name == "") {
+			if (name == null || "".equals(name)) {
 				newFilename = originalFilename;
 			} else {
 				newFilename = name + originalFilename.substring(originalFilename.lastIndexOf('.'));
